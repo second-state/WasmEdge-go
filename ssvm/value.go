@@ -138,3 +138,22 @@ func fromSSVMValue(value C.SSVM_Value, origtype C.enum_SSVM_ValType) interface{}
 	}
 	return 0
 }
+
+func toSSVMValueSlide(vals ...interface{}) []C.SSVM_Value {
+	cvals := make([]C.SSVM_Value, len(vals))
+	for i, val := range vals {
+		cvals[i] = toSSVMValue(val)
+	}
+	return cvals
+}
+
+func fromSSVMValueSlide(cvals []C.SSVM_Value, types []C.enum_SSVM_ValType) []interface{} {
+	if len(types) > 0 {
+		vals := make([]interface{}, len(types))
+		for i, cval := range cvals {
+			vals[i] = fromSSVMValue(cval, types[i])
+		}
+		return vals
+	}
+	return []interface{}{}
+}

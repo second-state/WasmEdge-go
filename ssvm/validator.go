@@ -27,6 +27,10 @@ func NewValidatorWithConfig(conf *Configure) *Validator {
 	return self
 }
 
+func (self *Validator) Validate(ast *AST) error {
+	return newError(C.SSVM_ValidatorValidate(self._inner, ast._inner))
+}
+
 func (self *Validator) Delete() {
 	C.SSVM_ValidatorDelete(self._inner)
 	self._inner = nil
