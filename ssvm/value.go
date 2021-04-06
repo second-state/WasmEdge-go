@@ -2,7 +2,12 @@ package ssvm
 
 // #include <ssvm.h>
 import "C"
-import "unsafe"
+import (
+	"encoding/binary"
+	"reflect"
+	"sync"
+	"unsafe"
+)
 
 type ValType C.enum_SSVM_ValType
 type RefType C.enum_SSVM_RefType
@@ -68,16 +73,115 @@ func (self ValMut) String() string {
 	panic("Unknown value mutability")
 }
 
+type externRefManager struct {
+	mu sync.Mutex
+	// Valid next index of map. Use and increase this index when gc is empty.
+	idx uint
+	// Recycled entries of map. Use entry in this slide when allocate a new external reference.
+	gc  []uint
+	ref map[uint]interface{}
+}
+
+func (self *externRefManager) add(ptr interface{}) uint {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+
+	var realidx uint
+	if len(self.gc) > 0 {
+		realidx = self.gc[len(self.gc)-1]
+		self.gc = self.gc[0:]
+	} else {
+		realidx = self.idx
+		self.idx++
+	}
+	self.ref[realidx] = ptr
+	return realidx
+}
+
+func (self *externRefManager) get(i uint) interface{} {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	return self.ref[i]
+}
+
+func (self *externRefManager) del(i uint) {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	delete(self.ref, i)
+	self.gc = append(self.gc, i)
+}
+
+var externRefMgr = externRefManager{
+	/// Index = 0 is reserved for ref.null
+	idx: 1,
+	ref: make(map[uint]interface{}),
+}
+
 type FuncRef struct {
 	_inner C.SSVM_Value
 }
 
+func NewFuncRef(funcidx uint) FuncRef {
+	return FuncRef{
+		_inner: C.SSVM_ValueGenFuncRef(C.uint32_t(funcidx)),
+	}
+}
+
 type ExternRef struct {
 	_inner C.SSVM_Value
+	_valid bool
+}
+
+func NewExternRef(ptr interface{}) ExternRef {
+	idx := uint64(externRefMgr.add(ptr))
+	val := toSSVMValue(idx)
+	val.Type = C.SSVM_ValType_ExternRef
+	return ExternRef{
+		_inner: val,
+		_valid: true,
+	}
+}
+
+func (self ExternRef) Release() {
+	self._valid = false
+	idx := uint(fromSSVMValue(self._inner, C.SSVM_ValType_I64).(int64))
+	externRefMgr.del(idx)
+}
+
+func (self ExternRef) GetRef() interface{} {
+	if self._valid {
+		idx := uint(fromSSVMValue(self._inner, C.SSVM_ValType_I64).(int64))
+		return externRefMgr.get(idx)
+	}
+	return nil
 }
 
 type V128 struct {
 	_inner C.SSVM_Value
+}
+
+func NewV128(high uint64, low uint64) V128 {
+	var cval C.__int128
+	var buf []byte
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
+	sliceHeader.Cap = 16
+	sliceHeader.Len = 16
+	sliceHeader.Data = uintptr(unsafe.Pointer(&cval))
+	binary.LittleEndian.PutUint64(buf[:8], low)
+	binary.LittleEndian.PutUint64(buf[8:], high)
+	return V128{
+		_inner: C.SSVM_ValueGenV128(cval),
+	}
+}
+
+func (self V128) GetVal() (uint64, uint64) {
+	cval := C.SSVM_ValueGetV128(self._inner)
+	var buf []byte
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
+	sliceHeader.Cap = 16
+	sliceHeader.Len = 16
+	sliceHeader.Data = uintptr(unsafe.Pointer(&cval))
+	return binary.LittleEndian.Uint64(buf[8:]), binary.LittleEndian.Uint64(buf[:8])
 }
 
 func toSSVMValue(value interface{}) C.SSVM_Value {
@@ -85,6 +189,9 @@ func toSSVMValue(value interface{}) C.SSVM_Value {
 	case FuncRef:
 		return value.(FuncRef)._inner
 	case ExternRef:
+		if !value.(ExternRef)._valid {
+			panic("External reference is released")
+		}
 		return value.(ExternRef)._inner
 	case V128:
 		return value.(V128)._inner
@@ -132,7 +239,11 @@ func fromSSVMValue(value C.SSVM_Value, origtype C.enum_SSVM_ValType) interface{}
 	case C.SSVM_ValType_FuncRef:
 		return FuncRef{_inner: value}
 	case C.SSVM_ValType_ExternRef:
-		return ExternRef{_inner: value}
+		idx := uint(C.SSVM_ValueGetI64(value))
+		if _, ok := externRefMgr.ref[idx]; ok {
+			return ExternRef{_inner: value, _valid: true}
+		}
+		return ExternRef{_inner: value, _valid: false}
 	default:
 		panic("Wrong argument of fromSSVMValue()")
 	}

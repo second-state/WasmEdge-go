@@ -2,6 +2,7 @@ package ssvm
 
 // #include <ssvm.h>
 import "C"
+import "unsafe"
 
 type Interpreter struct {
 	_inner *C.SSVM_InterpreterContext
@@ -66,7 +67,15 @@ func (self *Interpreter) Invoke(store *Store, funcname string, params ...interfa
 	ftype := funccxt.GetFunctionType()
 	cparams := toSSVMValueSlide(params...)
 	creturns := make([]C.SSVM_Value, len(ftype._returns))
-	res := C.SSVM_InterpreterInvoke(self._inner, store._inner, funcstr, &cparams[0], C.uint32_t(len(cparams)), &creturns[0], C.uint32_t(len(creturns)))
+	var ptrparams *C.SSVM_Value = nil
+	var ptrreturns *C.SSVM_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.SSVM_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	if len(creturns) > 0 {
+		ptrreturns = (*C.SSVM_Value)(unsafe.Pointer(&creturns[0]))
+	}
+	res := C.SSVM_InterpreterInvoke(self._inner, store._inner, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(ftype._returns)))
 	if !C.SSVM_ResultOK(res) {
 		return nil, newError(res)
 	}
@@ -80,7 +89,15 @@ func (self *Interpreter) InvokeRegistered(store *Store, modname string, funcname
 	ftype := funccxt.GetFunctionType()
 	cparams := toSSVMValueSlide(params...)
 	creturns := make([]C.SSVM_Value, len(ftype._returns))
-	res := C.SSVM_InterpreterInvokeRegistered(self._inner, store._inner, modstr, funcstr, &cparams[0], C.uint32_t(len(cparams)), &creturns[0], C.uint32_t(len(creturns)))
+	var ptrparams *C.SSVM_Value = nil
+	var ptrreturns *C.SSVM_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.SSVM_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	if len(creturns) > 0 {
+		ptrreturns = (*C.SSVM_Value)(unsafe.Pointer(&creturns[0]))
+	}
+	res := C.SSVM_InterpreterInvokeRegistered(self._inner, store._inner, modstr, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(ftype._returns)))
 	if !C.SSVM_ResultOK(res) {
 		return nil, newError(res)
 	}

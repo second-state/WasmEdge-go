@@ -4,12 +4,15 @@ package ssvm
 import "C"
 
 type ImportObject struct {
-	_inner *C.SSVM_ImportObjectContext
+	_inner     *C.SSVM_ImportObjectContext
+	_hostfuncs []uint
+	_data      interface{}
 }
 
-func NewImportObject(modname string) *ImportObject {
+func NewImportObject(modname string, additional interface{}) *ImportObject {
 	self := &ImportObject{
-		_inner: C.SSVM_ImportObjectCreate(toSSVMStringWrap(modname)),
+		_inner: C.SSVM_ImportObjectCreate(toSSVMStringWrap(modname), nil),
+		_data:  additional,
 	}
 	if self._inner == nil {
 		return nil
@@ -92,22 +95,35 @@ func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, 
 }
 
 func (self *ImportObject) AddHostFunction(name string, inst *HostFunction) {
+	hostfuncMgr.mu.Lock()
+	defer hostfuncMgr.mu.Unlock()
+	hostfuncMgr.data[inst._index] = self._data
+
 	C.SSVM_ImportObjectAddHostFunction(self._inner, toSSVMStringWrap(name), inst._inner)
+	self._hostfuncs = append(self._hostfuncs, inst._index)
+	inst._inner = nil
 }
 
 func (self *ImportObject) AddTable(name string, inst *Table) {
 	C.SSVM_ImportObjectAddTable(self._inner, toSSVMStringWrap(name), inst._inner)
+	inst._inner = nil
 }
 
 func (self *ImportObject) AddMemory(name string, inst *Memory) {
 	C.SSVM_ImportObjectAddMemory(self._inner, toSSVMStringWrap(name), inst._inner)
+	inst._inner = nil
 }
 
 func (self *ImportObject) AddGlobal(name string, inst *Global) {
 	C.SSVM_ImportObjectAddGlobal(self._inner, toSSVMStringWrap(name), inst._inner)
+	inst._inner = nil
 }
 
 func (self *ImportObject) Delete() {
+	for _, idx := range self._hostfuncs {
+		hostfuncMgr.del(idx)
+	}
+	self._hostfuncs = []uint{}
 	C.SSVM_ImportObjectDelete(self._inner)
 	self._inner = nil
 }

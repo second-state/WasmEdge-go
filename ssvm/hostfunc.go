@@ -1,8 +1,138 @@
 package ssvm
 
-// #include <ssvm.h>
+/*
+#include <ssvm.h>
+typedef void (*ssvmgo_HostFuncWrapper)
+  (void *, void *, SSVM_MemoryInstanceContext *, const SSVM_Value *, const uint32_t, SSVM_Value *, const uint32_t);
+
+SSVM_Result ssvmgo_HostFuncInvoke(void *Func, void *Data,
+                                  SSVM_MemoryInstanceContext *MemCxt,
+                                  const SSVM_Value *Params, const uint32_t ParamLen,
+                                  SSVM_Value *Returns, const uint32_t ReturnLen);
+*/
 import "C"
+import (
+	"reflect"
+	"sync"
+	"unsafe"
+)
 
 type HostFunction struct {
 	_inner *C.SSVM_HostFunctionContext
+	_index uint
+}
+
+type hostFunctionSignature func(data interface{}, mem *Memory, params []interface{}) ([]interface{}, Result)
+
+type hostFunctionManager struct {
+	mu sync.Mutex
+	// Valid next index of map. Use and increase this index when gc is empty.
+	idx uint
+	// Recycled entries of map. Use entry in this slide when allocate a new host function.
+	gc    []uint
+	data  map[uint]interface{}
+	funcs map[uint]hostFunctionSignature
+}
+
+func (self *hostFunctionManager) add(hostfunc hostFunctionSignature) uint {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+
+	var realidx uint
+	if len(self.gc) > 0 {
+		realidx = self.gc[len(self.gc)-1]
+		self.gc = self.gc[0:]
+	} else {
+		realidx = self.idx
+		self.idx++
+	}
+	self.funcs[realidx] = hostfunc
+	self.data[realidx] = nil
+	return realidx
+}
+
+func (self *hostFunctionManager) get(i uint) (hostFunctionSignature, interface{}) {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	return self.funcs[i], self.data[i]
+}
+
+func (self *hostFunctionManager) del(i uint) {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	delete(self.funcs, i)
+	delete(self.data, i)
+	self.gc = append(self.gc, i)
+}
+
+var hostfuncMgr = hostFunctionManager{
+	idx:   0,
+	data:  make(map[uint]interface{}),
+	funcs: make(map[uint]hostFunctionSignature),
+}
+
+//export ssvmgo_HostFuncInvokeImpl
+func ssvmgo_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.SSVM_MemoryInstanceContext, params *C.SSVM_Value, paramlen C.uint32_t, returns *C.SSVM_Value, returnlen C.uint32_t) C.SSVM_Result {
+	gomem := &Memory{
+		_inner: mem,
+	}
+
+	goparams := make([]interface{}, uint(paramlen))
+	var cparams []C.SSVM_Value
+	if paramlen > 0 {
+		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&cparams)))
+		sliceHeader.Cap = int(paramlen)
+		sliceHeader.Len = int(paramlen)
+		sliceHeader.Data = uintptr(unsafe.Pointer(params))
+		for i := 0; i < int(paramlen); i++ {
+			goparams[i] = fromSSVMValue(cparams[i], cparams[i].Type)
+			if cparams[i].Type == C.SSVM_ValType_ExternRef && !goparams[i].(ExternRef)._valid {
+				panic("External reference is released")
+			}
+		}
+	}
+
+	gofunc, godata := hostfuncMgr.get(uint(fn))
+	goreturns, err := gofunc(godata, gomem, goparams)
+
+	var creturns []C.SSVM_Value
+	if returnlen > 0 && goreturns != nil {
+		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&creturns)))
+		sliceHeader.Cap = int(returnlen)
+		sliceHeader.Len = int(returnlen)
+		sliceHeader.Data = uintptr(unsafe.Pointer(returns))
+		for i, val := range goreturns {
+			if i < int(returnlen) {
+				creturns[i] = toSSVMValue(val)
+			}
+		}
+	}
+
+	return C.SSVM_Result{Code: C.uint8_t(err.code)}
+}
+
+func NewHostFunction(functype *FunctionType, fn hostFunctionSignature, cost uint) *HostFunction {
+	cftype := toSSVMFunctionType(functype)
+	defer C.SSVM_FunctionTypeDelete(cftype)
+	self := &HostFunction{
+		_inner: nil,
+		_index: 0,
+	}
+
+	self._index = hostfuncMgr.add(fn)
+	chostfunc := C.SSVM_HostFunctionCreateBinding(cftype, C.ssvmgo_HostFuncWrapper(C.ssvmgo_HostFuncInvoke), unsafe.Pointer(uintptr(self._index)), C.uint64_t(cost))
+	if chostfunc == nil {
+		hostfuncMgr.del(self._index)
+		return nil
+	}
+	self._inner = chostfunc
+	return self
+}
+
+func (self *HostFunction) Delete() {
+	if self._inner != nil {
+		C.SSVM_HostFunctionDelete(self._inner)
+		self._inner = nil
+		hostfuncMgr.del(self._index)
+	}
 }

@@ -143,10 +143,10 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 	var ptrparams *C.SSVM_Value = nil
 	var ptrreturns *C.SSVM_Value = nil
 	if len(cparams) > 0 {
-		ptrparams = &cparams[0]
+		ptrparams = (*C.SSVM_Value)(unsafe.Pointer(&cparams[0]))
 	}
 	if len(creturns) > 0 {
-		ptrreturns = &creturns[0]
+		ptrreturns = (*C.SSVM_Value)(unsafe.Pointer(&creturns[0]))
 	}
 	res := C.SSVM_VMExecute(self._inner, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
 	if !C.SSVM_ResultOK(res) {
@@ -164,10 +164,10 @@ func (self *VM) ExecuteRegistered(modname string, funcname string, params ...int
 	var ptrparams *C.SSVM_Value = nil
 	var ptrreturns *C.SSVM_Value = nil
 	if len(cparams) > 0 {
-		ptrparams = &cparams[0]
+		ptrparams = (*C.SSVM_Value)(unsafe.Pointer(&cparams[0]))
 	}
 	if len(creturns) > 0 {
-		ptrreturns = &creturns[0]
+		ptrreturns = (*C.SSVM_Value)(unsafe.Pointer(&creturns[0]))
 	}
 	res := C.SSVM_VMExecuteRegistered(self._inner, modstr, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
 	if !C.SSVM_ResultOK(res) {
