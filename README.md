@@ -8,7 +8,9 @@ The [Second State VM (SSVM)](https://github.com/second-state/ssvm) is a high per
 
 # Getting Started
 
-## Build and install SSVM shared library
+## Install the SSVM shared library
+
+### Option 1: Build from the source
 
 Please refer to the [SSVM](https://github.com/second-state/ssvm) for details.
 
@@ -32,6 +34,14 @@ $ sudo cp <path/to/workspace/folder>/SSVM/build/lib/api/libssvm_c.so /usr/local/
 $ sudo ldconfig
 ```
 
+### Option 2: Install the pre-released library
+
+```bash
+$ wget https://github.com/second-state/ssvm-go/releases/download/v0.0.1/libssvm-0.7.4-rc1-manylinux2014_x86_64.tar.gz
+$ sudo tar -C /usr/local -xzf libssvm-0.7.4-rc1-manylinux2014_x86_64.tar.gz
+$ sudo ldconfig
+```
+
 ## Install GO
 
 Please refer to the [Go official site](https://golang.org/doc/install) for details.
@@ -45,3 +55,6 @@ $ go get github.com/second-state/ssvm-go
 # Example
 
 For examples, please refer to the [example folder](https://github.com/second-state/ssvm-go/examples).
+
+* [Print Fibonacci](https://github.com/second-state/ssvm-go/tree/master/examples/go_PrintFibonacci): The simple example for using the ssvm-go package and the usage of host function and external references.
+* [Read File](https://github.com/second-state/ssvm-go/tree/master/examples/go_ReadFile): The example for running the WASM file with WASI of read file and standard input and output.
