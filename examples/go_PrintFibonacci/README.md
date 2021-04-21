@@ -3,6 +3,8 @@
 ## Build
 
 ```bash
+# In the current directory.
+$ go get -u github.com/second-state/ssvm-go/ssvm
 $ go build
 ```
 
