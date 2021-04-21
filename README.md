@@ -1,6 +1,4 @@
-# This is an UNFINISHED AND UNRELEASED PROJECT.
-
-The tests are all not covered and the API may be changed rapidly.
+# ACTIVE DEVELOMENT. Use this project with your own risk.
 
 # Second State WebAssembly VM for Go Package
 
@@ -37,7 +35,7 @@ $ sudo ldconfig
 ### Option 2: Install the pre-released library
 
 ```bash
-$ wget https://github.com/second-state/ssvm-go/releases/download/v0.0.1/libssvm-0.7.4-rc1-manylinux2014_x86_64.tar.gz
+$ wget https://github.com/second-state/ssvm-go/releases/download/v0.1.0/libssvm-0.7.4-rc1-manylinux2014_x86_64.tar.gz
 $ sudo tar -C /usr/local -xzf libssvm-0.7.4-rc1-manylinux2014_x86_64.tar.gz
 $ sudo ldconfig
 ```
