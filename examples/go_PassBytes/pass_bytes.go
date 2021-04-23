@@ -49,13 +49,15 @@ func main() {
 	/// The configuration of VM creation needs to add the `ssvm.WASI` flag.
 	/// And the WASI initialization before calling this function will be replaced.
 	vm.RunWasmFileWithDataAndWASI(
-		os.Args[1],      /// WASM file path.
-		"_start",        /// WASM function to execute.
-		data,            /// Bytes to pass into WASM function.
-		os.Args[1:],     /// List to init WASI argv.
-		os.Environ(),    /// List to init WASI environment variables.
+		os.Args[1],   /// WASM file path.
+		"_start",     /// WASM function to execute.
+		data,         /// Bytes to pass into WASM function.
+		os.Args[1:],  /// List to init WASI argv.
+		os.Environ(), /// List to init WASI environment variables.
+		/// In this function, a new environment variable `SSVM_DATA_TO_CALLEE` will be appended.
 		[]string{".:."}, /// List to init WASI directory mappings.
-		[]string{},      /// List to init WASI preopens.
+		/// In this function, a new directory mapping `/tmp:/tmp` will be appended.
+		[]string{}, /// List to init WASI preopens.
 	)
 
 	vm.Delete()
