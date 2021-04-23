@@ -7,6 +7,8 @@ const char *_GoStringPtr(_GoString_ s);
 */
 import "C"
 import (
+	"io/ioutil"
+	"os"
 	"unsafe"
 )
 
@@ -88,6 +90,34 @@ func (self *VM) runWasm(funcname string, params ...interface{}) ([]interface{}, 
 }
 
 func (self *VM) RunWasmFile(path string, funcname string, params ...interface{}) ([]interface{}, error) {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+	res := C.SSVM_VMLoadWasmFromFile(self._inner, cpath)
+	if !C.SSVM_ResultOK(res) {
+		return nil, newError(res)
+	}
+	return self.runWasm(funcname, params...)
+}
+
+func (self *VM) RunWasmFileWithDataAndWASI(path string, funcname string, data []byte,
+	args []string, envp []string, dirs []string, preopens []string, params ...interface{}) ([]interface{}, error) {
+	/// Create a temp file
+	tmpf, _ := ioutil.TempFile("", "tmp.*.bin")
+	defer os.Remove(tmpf.Name())
+	tmpf.Write(data)
+	tmpf.Close()
+
+	/// Init WASI (test)
+	var wasi = self.GetImportObject(WASI)
+	if wasi != nil {
+		wasi.InitWasi(
+			args, /// The args
+			append(envp, "SSVM_DATA_TO_CALLEE="+tmpf.Name()), /// The envs
+			append(dirs, "/tmp:/tmp"),                        /// The mapping directories
+			preopens,                                         /// The preopens will be empty
+		)
+	}
+
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	res := C.SSVM_VMLoadWasmFromFile(self._inner, cpath)
