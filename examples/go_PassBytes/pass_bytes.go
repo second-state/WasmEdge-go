@@ -12,10 +12,6 @@ import (
 func main() {
 	fmt.Println("Go: Args:", os.Args)
 
-	/// Create a temp file
-	tmpf, _ := ioutil.TempFile("", "tmp.*.bin")
-	defer os.Remove(tmpf.Name())
-
 	/// Get the test image from argv[2] or stdin
 	var data []byte
 	var err error = nil
@@ -35,9 +31,6 @@ func main() {
 			return
 		}
 	}
-	fmt.Println("Go: Write to temp file:", tmpf.Name())
-	tmpf.Write(data)
-	tmpf.Close()
 
 	fmt.Println("Go: Start to run WASM:", os.Args[1])
 
@@ -51,20 +44,19 @@ func main() {
 	/// Create VM with configure
 	var vm = ssvm.NewVMWithConfig(conf)
 
-	/// Init WASI (test)
-	var wasi = vm.GetImportObject(ssvm.WASI)
-	var args = []string{os.Args[1]}
-	var envp = append(os.Environ(), "SSVM_DATA_TO_CALLEE="+tmpf.Name())
-	var maps = []string{".:.", "/tmp:/tmp"}
-	wasi.InitWasi(
-		args,       /// The args
-		envp,       /// The envs
-		maps,       /// The mapping directories
-		[]string{}, /// The preopens will be empty
-	)
-
 	/// Instantiate wasm
-	vm.RunWasmFile(os.Args[1], "_start")
+	/// This function will also initialize WASI.
+	/// The configuration of VM creation needs to add the `ssvm.WASI` flag.
+	/// And the WASI initialization before calling this function will be replaced.
+	vm.RunWasmFileWithDataAndWASI(
+		os.Args[1],      /// WASM file path.
+		"_start",        /// WASM function to execute.
+		data,            /// Bytes to pass into WASM function.
+		os.Args[1:],     /// List to init WASI argv.
+		os.Environ(),    /// List to init WASI environment variables.
+		[]string{".:."}, /// List to init WASI directory mappings.
+		[]string{},      /// List to init WASI preopens.
+	)
 
 	vm.Delete()
 	conf.Delete()
