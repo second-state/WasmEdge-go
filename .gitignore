@@ -62,3 +62,7 @@ docs/_build
 .vs
 # clangd index
 .clangd
+
+pkg/
+target/
+Cargo.lock
