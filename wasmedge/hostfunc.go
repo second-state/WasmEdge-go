@@ -1,14 +1,14 @@
-package ssvm
+package wasmedge
 
 /*
-#include <ssvm.h>
-typedef void (*ssvmgo_HostFuncWrapper)
-  (void *, void *, SSVM_MemoryInstanceContext *, const SSVM_Value *, const uint32_t, SSVM_Value *, const uint32_t);
+#include <wasmedge.h>
+typedef void (*wasmedgego_HostFuncWrapper)
+  (void *, void *, WasmEdge_MemoryInstanceContext *, const WasmEdge_Value *, const uint32_t, WasmEdge_Value *, const uint32_t);
 
-SSVM_Result ssvmgo_HostFuncInvoke(void *Func, void *Data,
-                                  SSVM_MemoryInstanceContext *MemCxt,
-                                  const SSVM_Value *Params, const uint32_t ParamLen,
-                                  SSVM_Value *Returns, const uint32_t ReturnLen);
+WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
+                                  WasmEdge_MemoryInstanceContext *MemCxt,
+                                  const WasmEdge_Value *Params, const uint32_t ParamLen,
+                                  WasmEdge_Value *Returns, const uint32_t ReturnLen);
 */
 import "C"
 import (
@@ -18,7 +18,7 @@ import (
 )
 
 type HostFunction struct {
-	_inner *C.SSVM_HostFunctionContext
+	_inner *C.WasmEdge_HostFunctionContext
 	_index uint
 }
 
@@ -71,22 +71,22 @@ var hostfuncMgr = hostFunctionManager{
 	funcs: make(map[uint]hostFunctionSignature),
 }
 
-//export ssvmgo_HostFuncInvokeImpl
-func ssvmgo_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.SSVM_MemoryInstanceContext, params *C.SSVM_Value, paramlen C.uint32_t, returns *C.SSVM_Value, returnlen C.uint32_t) C.SSVM_Result {
+//export wasmedgego_HostFuncInvokeImpl
+func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_MemoryInstanceContext, params *C.WasmEdge_Value, paramlen C.uint32_t, returns *C.WasmEdge_Value, returnlen C.uint32_t) C.WasmEdge_Result {
 	gomem := &Memory{
 		_inner: mem,
 	}
 
 	goparams := make([]interface{}, uint(paramlen))
-	var cparams []C.SSVM_Value
+	var cparams []C.WasmEdge_Value
 	if paramlen > 0 {
 		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&cparams)))
 		sliceHeader.Cap = int(paramlen)
 		sliceHeader.Len = int(paramlen)
 		sliceHeader.Data = uintptr(unsafe.Pointer(params))
 		for i := 0; i < int(paramlen); i++ {
-			goparams[i] = fromSSVMValue(cparams[i], cparams[i].Type)
-			if cparams[i].Type == C.SSVM_ValType_ExternRef && !goparams[i].(ExternRef)._valid {
+			goparams[i] = fromWasmEdgeValue(cparams[i], cparams[i].Type)
+			if cparams[i].Type == C.WasmEdge_ValType_ExternRef && !goparams[i].(ExternRef)._valid {
 				panic("External reference is released")
 			}
 		}
@@ -95,7 +95,7 @@ func ssvmgo_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.SSVM_MemoryInsta
 	gofunc, godata := hostfuncMgr.get(uint(fn))
 	goreturns, err := gofunc(godata, gomem, goparams)
 
-	var creturns []C.SSVM_Value
+	var creturns []C.WasmEdge_Value
 	if returnlen > 0 && goreturns != nil {
 		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&creturns)))
 		sliceHeader.Cap = int(returnlen)
@@ -103,24 +103,24 @@ func ssvmgo_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.SSVM_MemoryInsta
 		sliceHeader.Data = uintptr(unsafe.Pointer(returns))
 		for i, val := range goreturns {
 			if i < int(returnlen) {
-				creturns[i] = toSSVMValue(val)
+				creturns[i] = toWasmEdgeValue(val)
 			}
 		}
 	}
 
-	return C.SSVM_Result{Code: C.uint8_t(err.code)}
+	return C.WasmEdge_Result{Code: C.uint8_t(err.code)}
 }
 
 func NewHostFunction(functype *FunctionType, fn hostFunctionSignature, cost uint) *HostFunction {
-	cftype := toSSVMFunctionType(functype)
-	defer C.SSVM_FunctionTypeDelete(cftype)
+	cftype := toWasmEdgeFunctionType(functype)
+	defer C.WasmEdge_FunctionTypeDelete(cftype)
 	self := &HostFunction{
 		_inner: nil,
 		_index: 0,
 	}
 
 	self._index = hostfuncMgr.add(fn)
-	chostfunc := C.SSVM_HostFunctionCreateBinding(cftype, C.ssvmgo_HostFuncWrapper(C.ssvmgo_HostFuncInvoke), unsafe.Pointer(uintptr(self._index)), C.uint64_t(cost))
+	chostfunc := C.WasmEdge_HostFunctionCreateBinding(cftype, C.wasmedgego_HostFuncWrapper(C.wasmedgego_HostFuncInvoke), unsafe.Pointer(uintptr(self._index)), C.uint64_t(cost))
 	if chostfunc == nil {
 		hostfuncMgr.del(self._index)
 		return nil
@@ -131,7 +131,7 @@ func NewHostFunction(functype *FunctionType, fn hostFunctionSignature, cost uint
 
 func (self *HostFunction) Delete() {
 	if self._inner != nil {
-		C.SSVM_HostFunctionDelete(self._inner)
+		C.WasmEdge_HostFunctionDelete(self._inner)
 		self._inner = nil
 		hostfuncMgr.del(self._index)
 	}

@@ -1,15 +1,15 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 
 type Validator struct {
-	_inner *C.SSVM_ValidatorContext
+	_inner *C.WasmEdge_ValidatorContext
 }
 
 func NewValidator() *Validator {
 	self := &Validator{
-		_inner: C.SSVM_ValidatorCreate(nil),
+		_inner: C.WasmEdge_ValidatorCreate(nil),
 	}
 	if self._inner == nil {
 		return nil
@@ -19,7 +19,7 @@ func NewValidator() *Validator {
 
 func NewValidatorWithConfig(conf *Configure) *Validator {
 	self := &Validator{
-		_inner: C.SSVM_ValidatorCreate(conf._inner),
+		_inner: C.WasmEdge_ValidatorCreate(conf._inner),
 	}
 	if self._inner == nil {
 		return nil
@@ -28,10 +28,10 @@ func NewValidatorWithConfig(conf *Configure) *Validator {
 }
 
 func (self *Validator) Validate(ast *AST) error {
-	return newError(C.SSVM_ValidatorValidate(self._inner, ast._inner))
+	return newError(C.WasmEdge_ValidatorValidate(self._inner, ast._inner))
 }
 
 func (self *Validator) Delete() {
-	C.SSVM_ValidatorDelete(self._inner)
+	C.WasmEdge_ValidatorDelete(self._inner)
 	self._inner = nil
 }
