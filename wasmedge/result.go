@@ -1,6 +1,6 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 
 type Result struct {
@@ -13,8 +13,8 @@ var (
 	Result_Fail      = Result{code: 2}
 )
 
-func newError(res C.SSVM_Result) *Result {
-	if C.SSVM_ResultOK(res) {
+func newError(res C.WasmEdge_Result) *Result {
+	if C.WasmEdge_ResultOK(res) {
 		return nil
 	}
 	return &Result{
@@ -23,5 +23,5 @@ func newError(res C.SSVM_Result) *Result {
 }
 
 func (res *Result) Error() string {
-	return C.GoString(C.SSVM_ResultGetMessage(C.SSVM_Result{Code: C.uint8_t(res.code)}))
+	return C.GoString(C.WasmEdge_ResultGetMessage(C.WasmEdge_Result{Code: C.uint8_t(res.code)}))
 }

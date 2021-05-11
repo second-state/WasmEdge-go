@@ -1,6 +1,6 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 
 type Limit struct {

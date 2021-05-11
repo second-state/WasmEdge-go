@@ -1,17 +1,17 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 
 type ImportObject struct {
-	_inner     *C.SSVM_ImportObjectContext
+	_inner     *C.WasmEdge_ImportObjectContext
 	_hostfuncs []uint
 	_data      interface{}
 }
 
 func NewImportObject(modname string, additional interface{}) *ImportObject {
 	self := &ImportObject{
-		_inner: C.SSVM_ImportObjectCreate(toSSVMStringWrap(modname), nil),
+		_inner: C.WasmEdge_ImportObjectCreate(toWasmEdgeStringWrap(modname), nil),
 		_data:  additional,
 	}
 	if self._inner == nil {
@@ -43,7 +43,7 @@ func NewWasiImportObject(args []string, envs []string, dirs []string, preopens [
 	}
 
 	self := &ImportObject{
-		_inner: C.SSVM_ImportObjectCreateWASI(ptrargs, C.uint32_t(len(cargs)),
+		_inner: C.WasmEdge_ImportObjectCreateWASI(ptrargs, C.uint32_t(len(cargs)),
 			ptrenvs, C.uint32_t(len(cenvs)),
 			ptrdirs, C.uint32_t(len(cdirs)),
 			ptrpreopens, C.uint32_t(len(cpreopens))),
@@ -82,7 +82,7 @@ func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, 
 		ptrpreopens = &cpreopens[0]
 	}
 
-	C.SSVM_ImportObjectInitWASI(self._inner,
+	C.WasmEdge_ImportObjectInitWASI(self._inner,
 		ptrargs, C.uint32_t(len(cargs)),
 		ptrenvs, C.uint32_t(len(cenvs)),
 		ptrdirs, C.uint32_t(len(cdirs)),
@@ -99,23 +99,23 @@ func (self *ImportObject) AddHostFunction(name string, inst *HostFunction) {
 	defer hostfuncMgr.mu.Unlock()
 	hostfuncMgr.data[inst._index] = self._data
 
-	C.SSVM_ImportObjectAddHostFunction(self._inner, toSSVMStringWrap(name), inst._inner)
+	C.WasmEdge_ImportObjectAddHostFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	self._hostfuncs = append(self._hostfuncs, inst._index)
 	inst._inner = nil
 }
 
 func (self *ImportObject) AddTable(name string, inst *Table) {
-	C.SSVM_ImportObjectAddTable(self._inner, toSSVMStringWrap(name), inst._inner)
+	C.WasmEdge_ImportObjectAddTable(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	inst._inner = nil
 }
 
 func (self *ImportObject) AddMemory(name string, inst *Memory) {
-	C.SSVM_ImportObjectAddMemory(self._inner, toSSVMStringWrap(name), inst._inner)
+	C.WasmEdge_ImportObjectAddMemory(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	inst._inner = nil
 }
 
 func (self *ImportObject) AddGlobal(name string, inst *Global) {
-	C.SSVM_ImportObjectAddGlobal(self._inner, toSSVMStringWrap(name), inst._inner)
+	C.WasmEdge_ImportObjectAddGlobal(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	inst._inner = nil
 }
 
@@ -124,6 +124,6 @@ func (self *ImportObject) Delete() {
 		hostfuncMgr.del(idx)
 	}
 	self._hostfuncs = []uint{}
-	C.SSVM_ImportObjectDelete(self._inner)
+	C.WasmEdge_ImportObjectDelete(self._inner)
 	self._inner = nil
 }

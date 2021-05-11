@@ -1,14 +1,14 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 import "unsafe"
 
-func toSSVMStringWrap(str string) C.SSVM_String {
-	return C.SSVM_StringWrap(C._GoStringPtr(str), C.uint32_t(C._GoStringLen(str)))
+func toWasmEdgeStringWrap(str string) C.WasmEdge_String {
+	return C.WasmEdge_StringWrap(C._GoStringPtr(str), C.uint32_t(C._GoStringLen(str)))
 }
 
-func fromSSVMString(str C.SSVM_String) string {
+func fromWasmEdgeString(str C.WasmEdge_String) string {
 	if int(str.Length) > 0 {
 		return C.GoStringN(str.Buf, C.int32_t(str.Length))
 	}
