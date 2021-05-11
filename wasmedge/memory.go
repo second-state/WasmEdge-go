@@ -1,17 +1,17 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 import "unsafe"
 
 type Memory struct {
-	_inner *C.SSVM_MemoryInstanceContext
+	_inner *C.WasmEdge_MemoryInstanceContext
 }
 
 func NewMemory(lim Limit) *Memory {
-	climit := C.SSVM_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
+	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
 	self := &Memory{
-		_inner: C.SSVM_MemoryInstanceCreate(climit),
+		_inner: C.WasmEdge_MemoryInstanceCreate(climit),
 	}
 	if self._inner == nil {
 		return nil
@@ -25,8 +25,8 @@ func (self *Memory) GetData(off uint, length uint) ([]byte, error) {
 	if len(data) > 0 {
 		ptrdata = (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	}
-	res := C.SSVM_MemoryInstanceGetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length))
-	if !C.SSVM_ResultOK(res) {
+	res := C.WasmEdge_MemoryInstanceGetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length))
+	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
 
@@ -38,18 +38,18 @@ func (self *Memory) SetData(data []byte, off uint, length uint) error {
 	if len(data) > 0 {
 		ptrdata = (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	}
-	return newError(C.SSVM_MemoryInstanceSetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length)))
+	return newError(C.WasmEdge_MemoryInstanceSetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length)))
 }
 
 func (self *Memory) GetPageSize() uint {
-	return uint(C.SSVM_MemoryInstanceGetPageSize(self._inner))
+	return uint(C.WasmEdge_MemoryInstanceGetPageSize(self._inner))
 }
 
 func (self *Memory) GrowPage(size uint) error {
-	return newError(C.SSVM_MemoryInstanceGrowPage(self._inner, C.uint32_t(size)))
+	return newError(C.WasmEdge_MemoryInstanceGrowPage(self._inner, C.uint32_t(size)))
 }
 
 func (self *Memory) Delete() {
-	C.SSVM_MemoryInstanceDelete(self._inner)
+	C.WasmEdge_MemoryInstanceDelete(self._inner)
 	self._inner = nil
 }

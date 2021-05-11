@@ -1,3 +1,3 @@
-module github.com/second-state/ssvm-go
+module github.com/second-state/WasmEdge-go
 
 go 1.16

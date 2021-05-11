@@ -1,15 +1,15 @@
-package ssvm
+package wasmedge
 
-// #include <ssvm.h>
+// #include <wasmedge.h>
 import "C"
 
 type Statistics struct {
-	_inner *C.SSVM_StatisticsContext
+	_inner *C.WasmEdge_StatisticsContext
 }
 
 func NewStatistics() *Statistics {
 	self := &Statistics{
-		_inner: C.SSVM_StatisticsCreate(),
+		_inner: C.WasmEdge_StatisticsCreate(),
 	}
 	if self._inner == nil {
 		return nil
@@ -18,15 +18,15 @@ func NewStatistics() *Statistics {
 }
 
 func (self *Statistics) GetInstrCount() uint {
-	return uint(C.SSVM_StatisticsGetInstrCount(self._inner))
+	return uint(C.WasmEdge_StatisticsGetInstrCount(self._inner))
 }
 
 func (self *Statistics) GetInstrPerSecond() float64 {
-	return float64(C.SSVM_StatisticsGetInstrPerSecond(self._inner))
+	return float64(C.WasmEdge_StatisticsGetInstrPerSecond(self._inner))
 }
 
 func (self *Statistics) GetTotalCost() uint {
-	return uint(C.SSVM_StatisticsGetTotalCost(self._inner))
+	return uint(C.WasmEdge_StatisticsGetTotalCost(self._inner))
 }
 
 func (self *Statistics) SetCostTable(table []uint64) {
@@ -34,14 +34,14 @@ func (self *Statistics) SetCostTable(table []uint64) {
 	if len(table) > 0 {
 		ptr = &(table[0])
 	}
-	C.SSVM_StatisticsSetCostTable(self._inner, (*C.uint64_t)(ptr), C.uint32_t(len(table)))
+	C.WasmEdge_StatisticsSetCostTable(self._inner, (*C.uint64_t)(ptr), C.uint32_t(len(table)))
 }
 
 func (self *Statistics) SetCostLimit(limit uint) {
-	C.SSVM_StatisticsSetCostLimit(self._inner, C.uint64_t(limit))
+	C.WasmEdge_StatisticsSetCostLimit(self._inner, C.uint64_t(limit))
 }
 
 func (self *Statistics) Delete() {
-	C.SSVM_StatisticsDelete(self._inner)
+	C.WasmEdge_StatisticsDelete(self._inner)
 	self._inner = nil
 }
