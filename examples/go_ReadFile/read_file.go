@@ -3,27 +3,27 @@ package main
 import (
 	"os"
 
-	"github.com/second-state/ssvm-go/ssvm"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 func main() {
 	/// Set not to print debug info
-	ssvm.SetLogErrorLevel()
+	wasmedge.SetLogErrorLevel()
 
 	/// Create configure
-	var conf = ssvm.NewConfigure(ssvm.REFERENCE_TYPES)
-	conf.AddConfig(ssvm.WASI)
+	var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
+	conf.AddConfig(wasmedge.WASI)
 
 	/// Create VM with configure
-	var vm = ssvm.NewVMWithConfig(conf)
+	var vm = wasmedge.NewVMWithConfig(conf)
 
 	/// Init WASI (test)
-	var wasi = vm.GetImportObject(ssvm.WASI)
+	var wasi = vm.GetImportObject(wasmedge.WASI)
 	wasi.InitWasi(
 		os.Args[1:],     /// The args
 		os.Environ(),    /// The envs
 		[]string{".:."}, /// The mapping directories
-		[]string{},      /// The preopens will be empty
+		[]string{""},    /// The preopens will be empty
 	)
 
 	/// Instantiate wasm
