@@ -35,10 +35,8 @@ $ sudo ldconfig
 ### Option 2: Install the pre-released library
 
 ```bash
-$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.0/WasmEdge-0.8.0-manylinux2014_x86_64.tar.gz
-$ tar -xzf WasmEdge-0.8.0-rc1-manylinux2014_x86_64.tar.gz
-$ sudo cp WasmEdge-0.8.0-Linux/include/wasmedge.h /usr/local/include/
-$ sudo cp WasmEdge-0.8.0-Linux/lib64/libwasmedge_c.so /usr/local/lib/
+$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.0/WasmEdge-0.8.0.deb
+$ sudo dpkg -i WasmEdge-0.8.0.deb
 $ sudo ldconfig
 ```
 
