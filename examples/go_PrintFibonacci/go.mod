@@ -2,4 +2,4 @@ module print_fibonacci
 
 go 1.16
 
-require github.com/second-state/ssvm-go v0.1.0 // indirect
+require github.com/second-state/WasmEdge-go v0.1.3 // indirect

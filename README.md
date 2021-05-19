@@ -145,5 +145,5 @@ $ go build --tags tensorflow
 
 For examples, please refer to the [example folder](https://github.com/second-state/WasmEdge-go/examples).
 
-* [Print Fibonacci](https://github.com/second-state/WasmEdge-go/tree/master/examples/go_PrintFibonacci): The simple example for using the ssvm-go package and the usage of host function and external references.
+* [Print Fibonacci](https://github.com/second-state/WasmEdge-go/tree/master/examples/go_PrintFibonacci): The simple example for using the WasmEdge-go package and the usage of host function and external references.
 * [Read File](https://github.com/second-state/WasmEdge-go/tree/master/examples/go_ReadFile): The example for running the WASM file with WASI of read file and standard input and output.

@@ -3,19 +3,19 @@ package main
 import (
 	"fmt"
 
-	"github.com/second-state/ssvm-go/ssvm"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
-func HostPrint(data interface{}, mem *ssvm.Memory, param []interface{}) ([]interface{}, ssvm.Result) {
+func HostPrint(data interface{}, mem *wasmedge.Memory, param []interface{}) ([]interface{}, wasmedge.Result) {
 	// param[0]: external reference
-	ref := param[0].(ssvm.ExternRef)
+	ref := param[0].(wasmedge.ExternRef)
 	value := ref.GetRef().(*int32)
 	// param[1]: result of fibonacci
 	fmt.Println(" [HostFunction] external value: ", *value, " , fibonacci number: ", param[1].(int32))
-	return []interface{}{}, ssvm.Result_Success
+	return []interface{}{}, wasmedge.Result_Success
 }
 
-func ListInsts(name interface{}, store *ssvm.Store) {
+func ListInsts(name interface{}, store *wasmedge.Store) {
 	if name == nil {
 		fmt.Println(" --- Exported instances of the anonymous module")
 		nf := store.ListFunction()
@@ -41,33 +41,33 @@ func ListInsts(name interface{}, store *ssvm.Store) {
 
 func main() {
 	/// Set not to print debug info
-	ssvm.SetLogErrorLevel()
+	wasmedge.SetLogErrorLevel()
 
 	/// Create configure
-	var conf = ssvm.NewConfigure(ssvm.REFERENCE_TYPES)
-	conf.AddConfig(ssvm.WASI)
+	var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
+	conf.AddConfig(wasmedge.WASI)
 
 	/// Create store
-	var store = ssvm.NewStore()
+	var store = wasmedge.NewStore()
 
 	/// Create VM by configure and external store
-	var vm = ssvm.NewVMWithConfigAndStore(conf, store)
+	var vm = wasmedge.NewVMWithConfigAndStore(conf, store)
 
 	/// Init WASI (test)
-	var wasi = vm.GetImportObject(ssvm.WASI)
+	var wasi = vm.GetImportObject(wasmedge.WASI)
 	wasi.InitWasi([]string{"123", "arg2", "final"},
 		[]string{"ENV1=VAL1", "ENV2=VALUE2"},
 		[]string{".:.", "/usr/include:/usr/include"},
 		[]string{"fibonacci.wasm"})
 
 	/// Create import object
-	var impobj = ssvm.NewImportObject("host", nil)
+	var impobj = wasmedge.NewImportObject("host", nil)
 
 	/// Create host function
-	var hostftype = ssvm.NewFunctionType(
-		[]ssvm.ValType{ssvm.ValType_ExternRef, ssvm.ValType_I32},
-		[]ssvm.ValType{})
-	var hostprint = ssvm.NewHostFunction(hostftype, HostPrint, 0)
+	var hostftype = wasmedge.NewFunctionType(
+		[]wasmedge.ValType{wasmedge.ValType_ExternRef, wasmedge.ValType_I32},
+		[]wasmedge.ValType{})
+	var hostprint = wasmedge.NewHostFunction(hostftype, HostPrint, 0)
 
 	/// Add host functions into import object
 	impobj.AddHostFunction("print_val_and_res", hostprint)
@@ -94,7 +94,7 @@ func main() {
 
 	/// Create external reference
 	var value int32 = 123456
-	refval := ssvm.NewExternRef(&value)
+	refval := wasmedge.NewExternRef(&value)
 
 	/// Run print external value 123456 and fib[20]
 	fmt.Println(" ### Running print_val_and_fib with fib[", 20, "] ...")

@@ -1,10 +1,10 @@
-# SSVM-Go Fibonacci example
+# WasmEdge-Go Fibonacci example
 
 ## Build
 
 ```bash
 # In the current directory.
-$ go get -u github.com/second-state/ssvm-go/ssvm
+$ go get -u github.com/second-state/WasmEdge-go/wasmedge
 $ go build
 ```
 

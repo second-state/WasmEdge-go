@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/second-state/ssvm-go/ssvm"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 func main() {
@@ -35,18 +35,18 @@ func main() {
 	fmt.Println("Go: Start to run WASM:", os.Args[1])
 
 	/// Set not to print debug info
-	ssvm.SetLogErrorLevel()
+	wasmedge.SetLogErrorLevel()
 
 	/// Create configure
-	var conf = ssvm.NewConfigure(ssvm.REFERENCE_TYPES)
-	conf.AddConfig(ssvm.WASI)
+	var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
+	conf.AddConfig(wasmedge.WASI)
 
 	/// Create VM with configure
-	var vm = ssvm.NewVMWithConfig(conf)
+	var vm = wasmedge.NewVMWithConfig(conf)
 
 	/// Instantiate wasm
 	/// This function will also initialize WASI.
-	/// The configuration of VM creation needs to add the `ssvm.WASI` flag.
+	/// The configuration of VM creation needs to add the `wasmedge.WASI` flag.
 	/// And the WASI initialization before calling this function will be replaced.
 	vm.RunWasmFileWithDataAndWASI(
 		os.Args[1],   /// WASM file path.

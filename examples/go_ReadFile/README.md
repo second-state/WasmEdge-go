@@ -1,4 +1,4 @@
-# SSVM-Go Read file example
+# WasmEdge-Go Read file example
 
 ## Build
 
@@ -14,8 +14,8 @@ The pre-built WASM from rust is provided as "rust_readfile.wasm".
 
 For building the WASM from the rust source, the following steps are required:
 
-- Install the [rustc](https://www.rust-lang.org/tools/install).
-- Install the `wasm32-wasi` target: `$ rustup target add wasm32-wasi`
+* Install the [rustc](https://www.rust-lang.org/tools/install).
+* Install the `wasm32-wasi` target: `$ rustup target add wasm32-wasi`
 
 ```bash
 $ rustc rust_readfile.rs --target wasm32-wasi -C opt-level=3
@@ -25,7 +25,7 @@ $ rustc rust_readfile.rs --target wasm32-wasi -C opt-level=3
 ## Run
 
 ```bash
-./read_file rust_readfile.wasm file.txt
+$ ./read_file rust_readfile.wasm file.txt
 ```
 
 The standard output of this example will be the following:
