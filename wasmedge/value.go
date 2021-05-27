@@ -4,6 +4,7 @@ package wasmedge
 import "C"
 import (
 	"encoding/binary"
+	"fmt"
 	"reflect"
 	"sync"
 	"unsafe"
@@ -258,6 +259,94 @@ func toWasmEdgeValueSlide(vals ...interface{}) []C.WasmEdge_Value {
 	return cvals
 }
 
+func toWasmEdgeValueSlideBindgen(vm *VM, retarray bool, modname *string, vals ...interface{}) []C.WasmEdge_Value {
+	//cvals := make([]C.WasmEdge_Value, len(vals))
+	cvals := []C.WasmEdge_Value{}
+	if retarray {
+		// Array result address = 8
+		cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(8)))
+	}
+	for _, val := range vals {
+		switch t := val.(type) {
+		case FuncRef:
+			panic("toWasmEdgeValueSlideBindgen(): Not support FuncRef now")
+		case ExternRef:
+			panic("toWasmEdgeValueSlideBindgen(): Not support ExternRef now")
+		case V128:
+			panic("toWasmEdgeValueSlideBindgen(): Not support v128 now")
+		case int32:
+			cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(val.(int32))))
+		case uint32:
+			cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(val.(uint32))))
+		case int64:
+			// wasm-bindgen magic: Set memory offset for return value
+			if len(cvals) == 0 {
+				cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
+			}
+			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64))))
+			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64) >> 32)))
+			cvals = append(cvals, vall, valu)
+		case uint64:
+			// wasm-bindgen magic: Set memory offset for return value
+			if len(cvals) == 0 {
+				cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
+			}
+			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64))))
+			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64) >> 32)))
+			cvals = append(cvals, vall, valu)
+		case int:
+			panic("toWasmEdgeValueSlideBindgen(): Not support int now, please use int32 or int64 instead")
+		case uint:
+			panic("toWasmEdgeValueSlideBindgen(): Not support uint now, please use uint32 or uint64 instead")
+		case float32:
+			panic("toWasmEdgeValueSlideBindgen(): Not support float32 now")
+		case float64:
+			panic("toWasmEdgeValueSlideBindgen(): Not support float64 now")
+		case []byte:
+			// Call malloc function
+			mallocsize := uint32(len(val.([]byte)))
+			var rets []interface{}
+			var err error = nil
+			if modname != nil {
+				rets, err = vm.ExecuteRegistered(*modname, "__wbindgen_malloc", mallocsize)
+			} else {
+				rets, err = vm.Execute("__wbindgen_malloc", mallocsize)
+			}
+			if err != nil {
+				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
+			}
+			if len(rets) <= 0 {
+				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+			}
+			argaddr := C.WasmEdge_ValueGenI32(C.int32_t(rets[0].(int32)))
+			argsize := C.WasmEdge_ValueGenI32(C.int32_t(mallocsize))
+			cvals = append(cvals, argaddr, argsize)
+			// Set bytes
+			store := vm.GetStore()
+			var memnames []string
+			var mem *Memory = nil
+			if modname != nil {
+				memnames = store.ListMemoryRegistered(*modname)
+			} else {
+				memnames = store.ListMemory()
+			}
+			if len(memnames) <= 0 {
+				panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+			}
+			if modname != nil {
+				mem = store.FindMemoryRegistered(*modname, memnames[0])
+			} else {
+				mem = store.FindMemory(memnames[0])
+			}
+			mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
+		default:
+			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): {} not supported", t)
+			panic(errorString)
+		}
+	}
+	return cvals
+}
+
 func fromWasmEdgeValueSlide(cvals []C.WasmEdge_Value, types []C.enum_WasmEdge_ValType) []interface{} {
 	if len(types) > 0 {
 		vals := make([]interface{}, len(types))
@@ -267,4 +356,92 @@ func fromWasmEdgeValueSlide(cvals []C.WasmEdge_Value, types []C.enum_WasmEdge_Va
 		return vals
 	}
 	return []interface{}{}
+}
+
+func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cvals []C.WasmEdge_Value, types []C.enum_WasmEdge_ValType) (interface{}, error) {
+	returns := fromWasmEdgeValueSlide(cvals, types)
+	switch rettype {
+	case Bindgen_return_void:
+		return nil, nil
+	case Bindgen_return_i32:
+		if len(returns) <= 0 {
+			panic("Expected return i32, but got empty")
+		}
+		return returns[0], nil
+	case Bindgen_return_i64:
+		// Get memory context
+		store := vm.GetStore()
+		var memnames []string
+		var mem *Memory = nil
+		if modname != nil {
+			memnames = store.ListMemoryRegistered(*modname)
+		} else {
+			memnames = store.ListMemory()
+		}
+		if len(memnames) <= 0 {
+			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
+		}
+		if modname != nil {
+			mem = store.FindMemoryRegistered(*modname, memnames[0])
+		} else {
+			mem = store.FindMemory(memnames[0])
+		}
+		// Get int64
+		buf, err := mem.GetData(0, 8)
+		if err != nil {
+			return nil, err
+		}
+		var num int64 = 0
+		for i, val := range buf {
+			num += int64(val) << (i * 8)
+		}
+		return num, nil
+	case Bindgen_return_array:
+		// Get memory context
+		store := vm.GetStore()
+		var memnames []string
+		var mem *Memory = nil
+		if modname != nil {
+			memnames = store.ListMemoryRegistered(*modname)
+		} else {
+			memnames = store.ListMemory()
+		}
+		if len(memnames) <= 0 {
+			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
+		}
+		if modname != nil {
+			mem = store.FindMemoryRegistered(*modname, memnames[0])
+		} else {
+			mem = store.FindMemory(memnames[0])
+		}
+		// Get address and length (array result address = 8)
+		buf, err := mem.GetData(8, 8)
+		if err != nil {
+			return nil, err
+		}
+		var num int64 = 0
+		for i, val := range buf {
+			num += int64(val) << (i * 8)
+		}
+		// Get bytes
+		var arraddr = int32(num)
+		var arrlen = int32(num >> 32)
+		buf, err = mem.GetData(uint(arraddr), uint(arrlen))
+		if err != nil {
+			return nil, err
+		}
+		// Free array
+		if modname != nil {
+			_, err = vm.ExecuteRegistered(*modname, "__wbindgen_free", arraddr, arrlen)
+		} else {
+			_, err = vm.Execute("__wbindgen_free", arraddr, arrlen)
+		}
+		if err != nil {
+			panic("fromWasmEdgeValueSlideBindgen(): malloc failed")
+		}
+		return buf, nil
+	default:
+		panic("Wrong expected return type")
+	}
+	return nil, nil
 }
