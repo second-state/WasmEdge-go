@@ -30,15 +30,15 @@ $ cargo build --release --target=wasm32-wasi
 
 ```bash
 # For interpreter mode:
-$ ./go_mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
+$ ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
 # For AOT mode:
-$ ./go_mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out.jpg
+$ ./mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out.jpg
 ```
 
 The standard output of this example will be the following:
 
 ```bash
-Go: Args: [./go_mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg]
+Go: Args: [./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg]
 Drawing box: 30 results ...
 ```
 
