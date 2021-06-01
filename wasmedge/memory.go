@@ -38,7 +38,11 @@ func (self *Memory) SetData(data []byte, off uint, length uint) error {
 	if len(data) > 0 {
 		ptrdata = (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	}
-	return newError(C.WasmEdge_MemoryInstanceSetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length)))
+	res := C.WasmEdge_MemoryInstanceSetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Memory) GetPageSize() uint {
@@ -46,7 +50,11 @@ func (self *Memory) GetPageSize() uint {
 }
 
 func (self *Memory) GrowPage(size uint) error {
-	return newError(C.WasmEdge_MemoryInstanceGrowPage(self._inner, C.uint32_t(size)))
+	res := C.WasmEdge_MemoryInstanceGrowPage(self._inner, C.uint32_t(size))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Memory) Delete() {
