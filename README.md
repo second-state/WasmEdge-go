@@ -1,4 +1,4 @@
-# Second State WebAssembly VM for Go Package
+# WasmEdge for Go Package
 
 The [WasmEdge](https://github.com/WasmEdge/WasmEdge) (formerly SSVM) is a high performance WebAssembly runtime optimized for server side applications. This project provides a [golang](https://golang.org/) package for accessing to WasmEdge.
 
