@@ -1,6 +1,6 @@
-package wasmedge
-
 // +build tensorflow
+
+package wasmedge
 
 /*
 #cgo linux LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow -ltensorflow_framework -ltensorflowlite_c
