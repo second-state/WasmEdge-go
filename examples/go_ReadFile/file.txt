@@ -1,8 +1,0 @@
-Line 0
-Line 1 : some words
-Line 2 : another words
-123456789
-abcDEF___!@#$%^
-6 -- empty
-line 7 --- (())))))(((())))
-the next line will be EOF
