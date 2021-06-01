@@ -1,6 +1,6 @@
-package wasmedge
-
 // +build image
+
+package wasmedge
 
 /*
 #cgo linux LDFLAGS: -lwasmedge-image_c -ljpeg -lpng
