@@ -28,7 +28,11 @@ func NewValidatorWithConfig(conf *Configure) *Validator {
 }
 
 func (self *Validator) Validate(ast *AST) error {
-	return newError(C.WasmEdge_ValidatorValidate(self._inner, ast._inner))
+	res := C.WasmEdge_ValidatorValidate(self._inner, ast._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Validator) Delete() {

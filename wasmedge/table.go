@@ -34,7 +34,11 @@ func (self *Table) GetData(off uint) (interface{}, error) {
 
 func (self *Table) SetData(data interface{}, off uint) error {
 	cval := toWasmEdgeValue(data)
-	return newError(C.WasmEdge_TableInstanceSetData(self._inner, cval, C.uint32_t(off)))
+	res := C.WasmEdge_TableInstanceSetData(self._inner, cval, C.uint32_t(off))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Table) GetSize() uint {
@@ -42,7 +46,11 @@ func (self *Table) GetSize() uint {
 }
 
 func (self *Table) Grow(size uint) error {
-	return newError(C.WasmEdge_TableInstanceGrow(self._inner, C.uint32_t(size)))
+	res := C.WasmEdge_TableInstanceGrow(self._inner, C.uint32_t(size))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Table) Delete() {

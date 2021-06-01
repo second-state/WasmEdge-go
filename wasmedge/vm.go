@@ -67,21 +67,37 @@ func (self *VM) RegisterWasmFile(modname string, path string) error {
 	modstr := toWasmEdgeStringWrap(modname)
 	var cpath = C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	return newError(C.WasmEdge_VMRegisterModuleFromFile(self._inner, modstr, cpath))
+	res := C.WasmEdge_VMRegisterModuleFromFile(self._inner, modstr, cpath)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) RegisterWasmBuffer(modname string, buf []byte) error {
 	modstr := toWasmEdgeStringWrap(modname)
-	return newError(C.WasmEdge_VMRegisterModuleFromBuffer(self._inner, modstr, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf))))
+	res := C.WasmEdge_VMRegisterModuleFromBuffer(self._inner, modstr, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) RegisterImport(imp *ImportObject) error {
-	return newError(C.WasmEdge_VMRegisterModuleFromImport(self._inner, imp._inner))
+	res := C.WasmEdge_VMRegisterModuleFromImport(self._inner, imp._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) RegisterAST(modname string, ast *AST) error {
 	modstr := toWasmEdgeStringWrap(modname)
-	return newError(C.WasmEdge_VMRegisterModuleFromASTModule(self._inner, modstr, ast._inner))
+	res := C.WasmEdge_VMRegisterModuleFromASTModule(self._inner, modstr, ast._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) runWasm(funcname string, params ...interface{}) ([]interface{}, error) {
@@ -125,23 +141,43 @@ func (self *VM) RunWasmAST(ast *AST, funcname string, params ...interface{}) ([]
 func (self *VM) LoadWasmFile(path string) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	return newError(C.WasmEdge_VMLoadWasmFromFile(self._inner, cpath))
+	res := C.WasmEdge_VMLoadWasmFromFile(self._inner, cpath)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) LoadWasmBuffer(buf []byte) error {
-	return newError(C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf))))
+	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) LoadWasmAST(ast *AST) error {
-	return newError(C.WasmEdge_VMLoadWasmFromASTModule(self._inner, ast._inner))
+	res := C.WasmEdge_VMLoadWasmFromASTModule(self._inner, ast._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) Validate() error {
-	return newError(C.WasmEdge_VMValidate(self._inner))
+	res := C.WasmEdge_VMValidate(self._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) Instantiate() error {
-	return newError(C.WasmEdge_VMInstantiate(self._inner))
+	res := C.WasmEdge_VMInstantiate(self._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, error) {

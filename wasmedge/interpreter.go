@@ -49,16 +49,28 @@ func NewInterpreterWithConfigAndStatistics(conf *Configure, stat *Statistics) *I
 }
 
 func (self *Interpreter) Instantiate(store *Store, ast *AST) error {
-	return newError(C.WasmEdge_InterpreterInstantiate(self._inner, store._inner, ast._inner))
+	res := C.WasmEdge_InterpreterInstantiate(self._inner, store._inner, ast._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Interpreter) RegisterImport(store *Store, imp *ImportObject) error {
-	return newError(C.WasmEdge_InterpreterRegisterImport(self._inner, store._inner, imp._inner))
+	res := C.WasmEdge_InterpreterRegisterImport(self._inner, store._inner, imp._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Interpreter) RegisterModule(store *Store, ast *AST, modname string) error {
 	modstr := toWasmEdgeStringWrap(modname)
-	return newError(C.WasmEdge_InterpreterRegisterModule(self._inner, store._inner, ast._inner, modstr))
+	res := C.WasmEdge_InterpreterRegisterModule(self._inner, store._inner, ast._inner, modstr)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Interpreter) Invoke(store *Store, funcname string, params ...interface{}) ([]interface{}, error) {
