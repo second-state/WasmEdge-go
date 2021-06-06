@@ -248,7 +248,6 @@ func fromWasmEdgeValue(value C.WasmEdge_Value, origtype C.enum_WasmEdge_ValType)
 	default:
 		panic("Wrong argument of fromWasmEdgeValue()")
 	}
-	return 0
 }
 
 func toWasmEdgeValueSlide(vals ...interface{}) []C.WasmEdge_Value {
@@ -340,7 +339,7 @@ func toWasmEdgeValueSlideBindgen(vm *VM, retarray bool, modname *string, vals ..
 			}
 			mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
 		default:
-			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): {} not supported", t)
+			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
 			panic(errorString)
 		}
 	}
@@ -443,5 +442,4 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 	default:
 		panic("Wrong expected return type")
 	}
-	return nil, nil
 }
