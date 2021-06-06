@@ -7,7 +7,7 @@ type Table struct {
 	_inner *C.WasmEdge_TableInstanceContext
 }
 
-func NewTable(rtype RefType, lim Limit) *Table {
+func NewTable(rtype RefType, lim *Limit) *Table {
 	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
 	crtype := C.enum_WasmEdge_RefType(rtype)
 	self := &Table{
