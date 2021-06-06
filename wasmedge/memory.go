@@ -8,7 +8,7 @@ type Memory struct {
 	_inner *C.WasmEdge_MemoryInstanceContext
 }
 
-func NewMemory(lim Limit) *Memory {
+func NewMemory(lim *Limit) *Memory {
 	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
 	self := &Memory{
 		_inner: C.WasmEdge_MemoryInstanceCreate(climit),
