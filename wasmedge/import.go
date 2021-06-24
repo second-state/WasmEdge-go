@@ -94,6 +94,37 @@ func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, 
 	freeCStringArray(cpreopens)
 }
 
+func NewWasmEdgeProcessImportObject(allowedcmds []string, allowall bool) *ImportObject {
+	ccmds := toCStringArray(allowedcmds)
+	var ptrcmds *(*C.char) = nil
+	if len(ccmds) > 0 {
+		ptrcmds = &ccmds[0]
+	}
+
+	self := &ImportObject{
+		_inner: C.
+			WasmEdge_ImportObjectCreateWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall)),
+	}
+
+	freeCStringArray(ccmds)
+	if self._inner == nil {
+		return nil
+	}
+	return self
+}
+
+func (self *ImportObject) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
+	ccmds := toCStringArray(allowedcmds)
+	var ptrcmds *(*C.char) = nil
+	if len(ccmds) > 0 {
+		ptrcmds = &ccmds[0]
+	}
+
+	C.WasmEdge_ImportObjectInitWasmEdgeProcess(self._inner, ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
+
+	freeCStringArray(ccmds)
+}
+
 func (self *ImportObject) AddHostFunction(name string, inst *HostFunction) {
 	hostfuncMgr.mu.Lock()
 	defer hostfuncMgr.mu.Unlock()
