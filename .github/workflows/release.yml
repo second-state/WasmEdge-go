@@ -1,0 +1,88 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  create:
+    name: Create Release
+    runs-on: ubuntu-latest
+    container:
+      image: wasmedge/wasmedge:latest
+    outputs:
+      version: ${{ steps.prep.outputs.version }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Get version
+      id: prep
+      run: |
+        echo ::set-output name=version::$(git describe --tag)
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: WasmEdge Go ${{ steps.prep.outputs.version }}
+        body_path: .CurrentChangelog.md
+        draft: true
+        prerelease: false
+  upload_scripts:
+    name: Upload scripts
+    needs: create
+    runs-on: ubuntu-latest
+    container:
+      image: wasmedge/wasmedge:latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Upload wasmedge installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create.outputs.upload_url }}
+        asset_path: install_wasmedge.sh
+        asset_name: install_wasmedge.sh
+        asset_content_type: application/x-sh
+    - name: Upload wasmedge-image installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create.outputs.upload_url }}
+        asset_path: install_wasmedge_image.sh
+        asset_name: install_wasmedge_image.sh
+        asset_content_type: application/x-sh
+    - name: Upload wasmedge-image-deps installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create.outputs.upload_url }}
+        asset_path: install_wasmedge_image_deps.sh
+        asset_name: install_wasmedge_image_deps.sh
+        asset_content_type: application/x-sh
+    - name: Upload wasmedge-tensorflow installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create.outputs.upload_url }}
+        asset_path: install_wasmedge_tensorflow.sh
+        asset_name: install_wasmedge_tensorflow.sh
+        asset_content_type: application/x-sh
+    - name: Upload wasmedge-tensorflow-deps installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create.outputs.upload_url }}
+        asset_path: install_wasmedge_tensorflow_deps.sh
+        asset_name: install_wasmedge_tensorflow_deps.sh
+        asset_content_type: application/x-sh
