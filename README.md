@@ -8,6 +8,14 @@ The [WasmEdge](https://github.com/WasmEdge/WasmEdge) (formerly SSVM) is a high p
 
 ## Getting Started
 
+The `WasmEdge-go` requires `golang` version >= `1.15`. Please check your `golang` version before installation.
+Developers can [download golang here](https://golang.org/dl/).
+
+```bash
+$ go version
+go version go1.16.5 linux/amd64
+```
+
 By default, the `WasmEdge-go` only turns on the basic runtime, and the [Installation of `WasmEdge` Shared Library](https://github.com/second-state/WasmEdge-go#wasmedge-shared-library-installation) is required.
 
 Install the `WasmEdge-go` package and build in your Go project directory:
