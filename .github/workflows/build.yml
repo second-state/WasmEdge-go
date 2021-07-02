@@ -1,0 +1,48 @@
+name: build
+
+concurrency:
+  group: build-${{ github.head_ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
+    name: Build WasmEdge-go with Go ${{ matrix.go }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Check go version
+        run: go version
+      - name: Install wasmedge
+        run: |
+          sudo ./install_wasmedge.sh /usr/local
+      - name: Build WasmEdge-go without any extensions
+        run: |
+          go build ./wasmedge/
+      - name: Install wasmedge-tensorflow
+        run: |
+          sudo ./install_wasmedge_tensorflow_deps.sh /usr/local
+          sudo ./install_wasmedge_tensorflow.sh /usr/local
+      - name: Instal wasmedge-images
+        run: |
+          sudo ./install_wasmedge_image_deps.sh /usr/local
+          sudo ./install_wasmedge_image.sh /usr/local
+      - name: Build WasmEdge-go with tensorflow and images extensions
+        run: |
+          sudo ldconfig
+          go build -tags image,tensorflow ./wasmedge/
+
