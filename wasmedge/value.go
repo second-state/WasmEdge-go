@@ -90,7 +90,7 @@ func (self *externRefManager) add(ptr interface{}) uint {
 	var realidx uint
 	if len(self.gc) > 0 {
 		realidx = self.gc[len(self.gc)-1]
-		self.gc = self.gc[0:]
+		self.gc = self.gc[0 : len(self.gc)-1]
 	} else {
 		realidx = self.idx
 		self.idx++
