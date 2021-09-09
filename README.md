@@ -55,22 +55,22 @@ For examples, please refer to the [example repository](https://github.com/second
 For `Ubuntu` or `Debian`:
 
 ```bash
-$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.1/WasmEdge-0.8.1.deb
-$ sudo dpkg -i WasmEdge-0.8.1.deb
+$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.2/WasmEdge-0.8.2.deb
+$ sudo dpkg -i WasmEdge-0.8.2.deb
 ```
 
 Or running the script:
 
 ```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.1/install_wasmedge.sh
+$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge.sh
 $ sudo ./install_wasmedge.sh /usr/local
 ```
 
 ## WasmEdge-tensorflow shared library installation
 
 ```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.1/install_wasmedge_tensorflow_deps.sh
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.1/install_wasmedge_tensorflow.sh
+$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_tensorflow_deps.sh
+$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_tensorflow.sh
 $ sudo ./install_wasmedge_tensorflow_deps.sh /usr/local
 $ sudo ./install_wasmedge_tensorflow.sh /usr/local
 ```
@@ -88,13 +88,13 @@ $ sudo apt-get install -y libjpeg-dev libpng-dev
 Or you can download and install the pre-built shared libraries for the `manylinux1` platforms:
 
 ```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.1/install_wasmedge_image_deps.sh
+$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_image_deps.sh
 $ sudo ./install_wasmedge_image_deps.sh /usr/local
 ```
 
 Finally, install the `WasmEdge-image`:
 
 ```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.1/install_wasmedge_image.sh
+$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_image.sh
 $ sudo ./install_wasmedge_image.sh /usr/local
 ```

@@ -1,3 +1,19 @@
+### v0.8.2 (2021-09-09)
+
+Features:
+
+* Updated to the [WasmEdge 0.8.2](https://github.com/WasmEdge/WasmEdge/releases/tag/0.8.2).
+* Added the CI for build testing with every tags.
+
+Fixed issues:
+
+* Fixed the GC slice in host function implementation.
+
+Docmentation:
+
+* Added the golang version notification.
+* Added the example links.
+
 ### v0.8.1 (2021-06-25)
 
 Features:

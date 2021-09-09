@@ -19,10 +19,10 @@ then
     mkdir -p $1/lib
 fi
 
-wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.1/WasmEdge-0.8.1-manylinux2014_x86_64.tar.gz
-tar -C $1 -xzf WasmEdge-0.8.1-manylinux2014_x86_64.tar.gz
-rm -f WasmEdge-0.8.1-manylinux2014_x86_64.tar.gz
-mv $1/WasmEdge-0.8.1-Linux/include/* $1/include
-mv $1/WasmEdge-0.8.1-Linux/lib64/* $1/lib
-rm -rf $1/WasmEdge-0.8.1-Linux
+wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.2/WasmEdge-0.8.2-manylinux2014_x86_64.tar.gz
+tar -C $1 -xzf WasmEdge-0.8.2-manylinux2014_x86_64.tar.gz
+rm -f WasmEdge-0.8.2-manylinux2014_x86_64.tar.gz
+mv $1/WasmEdge-0.8.2-Linux/include/* $1/include
+mv $1/WasmEdge-0.8.2-Linux/lib64/* $1/lib
+rm -rf $1/WasmEdge-0.8.2-Linux
 ldconfig

@@ -11,7 +11,7 @@ then
     mkdir -p $1
 fi
 
-wget https://github.com/second-state/WasmEdge-image/releases/download/0.8.1/WasmEdge-image-0.8.1-manylinux2014_x86_64.tar.gz
-tar -C $1 -xzf WasmEdge-image-0.8.1-manylinux2014_x86_64.tar.gz
-rm -f WasmEdge-image-0.8.1-manylinux2014_x86_64.tar.gz
+wget https://github.com/second-state/WasmEdge-image/releases/download/0.8.2/WasmEdge-image-0.8.2-manylinux2014_x86_64.tar.gz
+tar -C $1 -xzf WasmEdge-image-0.8.2-manylinux2014_x86_64.tar.gz
+rm -f WasmEdge-image-0.8.2-manylinux2014_x86_64.tar.gz
 ldconfig
