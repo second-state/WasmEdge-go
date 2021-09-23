@@ -76,7 +76,7 @@ func (self *VM) RegisterWasmFile(modname string, path string) error {
 
 func (self *VM) RegisterWasmBuffer(modname string, buf []byte) error {
 	modstr := toWasmEdgeStringWrap(modname)
-	res := C.WasmEdge_VMRegisterModuleFromBuffer(self._inner, modstr, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMRegisterModuleFromBuffer(self._inner, modstr, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -123,7 +123,7 @@ func (self *VM) RunWasmFile(path string, funcname string, params ...interface{})
 }
 
 func (self *VM) RunWasmBuffer(buf []byte, funcname string, params ...interface{}) ([]interface{}, error) {
-	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
@@ -149,7 +149,7 @@ func (self *VM) LoadWasmFile(path string) error {
 }
 
 func (self *VM) LoadWasmBuffer(buf []byte) error {
-	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}

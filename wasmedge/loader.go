@@ -41,7 +41,7 @@ func (self *Loader) LoadFile(path string) (*AST, error) {
 
 func (self *Loader) LoadBuffer(buf []byte) (*AST, error) {
 	var module *C.WasmEdge_ASTModuleContext = nil
-	res := C.WasmEdge_LoaderParseFromBuffer(self._inner, &module, (*C.uint8_t)(unsafe.Pointer(&buf)), C.uint32_t(len(buf)))
+	res := C.WasmEdge_LoaderParseFromBuffer(self._inner, &module, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
