@@ -55,7 +55,7 @@ For examples, please refer to the [example repository](https://github.com/second
 For `Ubuntu` or `Debian`:
 
 ```bash
-$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.2/WasmEdge-0.8.2.deb
+$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.2/WasmEdge-0.8.2-ubuntu20.04_amd64.deb
 $ sudo dpkg -i WasmEdge-0.8.2.deb
 ```
 
