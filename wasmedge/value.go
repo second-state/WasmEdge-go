@@ -258,12 +258,15 @@ func toWasmEdgeValueSlide(vals ...interface{}) []C.WasmEdge_Value {
 	return cvals
 }
 
-func toWasmEdgeValueSlideBindgen(vm *VM, retarray bool, modname *string, vals ...interface{}) []C.WasmEdge_Value {
+func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals ...interface{}) []C.WasmEdge_Value {
 	//cvals := make([]C.WasmEdge_Value, len(vals))
 	cvals := []C.WasmEdge_Value{}
-	if retarray {
+	if rettype == Bindgen_return_array {
 		// Array result address = 8
 		cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(8)))
+	} else if rettype == Bindgen_return_i64 {
+		// wasm-bindgen magic: Set memory offset for i64 return value
+		cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
 	}
 	for _, val := range vals {
 		switch t := val.(type) {
@@ -278,18 +281,10 @@ func toWasmEdgeValueSlideBindgen(vm *VM, retarray bool, modname *string, vals ..
 		case uint32:
 			cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(val.(uint32))))
 		case int64:
-			// wasm-bindgen magic: Set memory offset for return value
-			if len(cvals) == 0 {
-				cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
-			}
 			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64))))
 			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64) >> 32)))
 			cvals = append(cvals, vall, valu)
 		case uint64:
-			// wasm-bindgen magic: Set memory offset for return value
-			if len(cvals) == 0 {
-				cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
-			}
 			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64))))
 			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64) >> 32)))
 			cvals = append(cvals, vall, valu)

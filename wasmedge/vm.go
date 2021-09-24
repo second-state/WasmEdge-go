@@ -204,8 +204,7 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...interface{}) (interface{}, error) {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
-	retarray := rettype == Bindgen_return_array
-	cparams := toWasmEdgeValueSlideBindgen(self, retarray, nil, params...)
+	cparams := toWasmEdgeValueSlideBindgen(self, rettype, nil, params...)
 	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
@@ -249,8 +248,7 @@ func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettyp
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
-	retarray := rettype == Bindgen_return_array
-	cparams := toWasmEdgeValueSlideBindgen(self, retarray, &modname, params...)
+	cparams := toWasmEdgeValueSlideBindgen(self, rettype, &modname, params...)
 	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
