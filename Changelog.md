@@ -1,3 +1,10 @@
+### v0.9.0-rc1 (2021-09-24)
+
+Fixed issues:
+
+* Fixed the bugs in the load-WASM-from-buffer functions.
+* Fixed the bugs in bindgen execution functions.
+
 ### v0.8.2 (2021-09-09)
 
 Features:
