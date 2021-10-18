@@ -39,7 +39,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all
 
     - name: Install the examples
       run: |
@@ -101,11 +101,26 @@ jobs:
         ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
         cd ../../
 
-    #- name: go_Mobilenet
-    #  run: |
-    #    cd wasmedge-go-examples/go_Mobilenet
-    #    go get -u github.com/second-state/WasmEdge-go/wasmedge
-    #    go build
-    #    ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
-    #    ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
-    #    cd ../../
+    - name: go_Mobilenet
+      run: |
+        cd wasmedge-go-examples/go_Mobilenet
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build --tags tensorflow
+        ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
+        cd ../../
+        
+    - name: go_MobilenetFood
+      run: |
+        cd wasmedge-go-examples/go_MobilenetFood
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build --tags tensorflow
+        ./mobilenet_food rust_mobilenet_food_lib_bg.wasm food.jpg
+        cd ../../
+        
+    - name: go_mtcnn
+      run: |
+        cd wasmedge-go-examples/go_mtcnn
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build --tags image --tags tensorflow
+        ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
+        cd ../../
