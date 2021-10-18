@@ -41,17 +41,17 @@ jobs:
 
     - name: go_PrintFibonacci
       run: |
-        cd go_PrintFibonacci
+        cd wasmedge-go-examples/go_PrintFibonacci
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./print_fibonacci
-        cd ../
+        cd ../../
 
     - name: go_Mobilenet
       run: |
-        cd go_Mobilenet
+        cd wasmedge-go-examples/go_Mobilenet
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
         ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
-        cd ../
+        cd ../../
