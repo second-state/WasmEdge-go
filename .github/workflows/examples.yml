@@ -51,7 +51,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./print_fibonacci
-        cd ../../
         
     - name: go_ReadFile
       run: |
@@ -59,7 +58,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./read_file rust_readfile.wasm file.txt
-        cd ../../
         
     - name: go_WasmAOT
       run: |
@@ -67,7 +65,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./wasmAOT fibonacci.wasm fibonacci.wasm.so
-        cd ../../
         
     - name: go_ExternRef
       run: |
@@ -75,7 +72,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./externref funcs.wasm
-        cd ../../
         
     - name: go_BindgenFuncs
       run: |
@@ -83,7 +79,7 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm
-        cd ../../
+    #   ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm.so
         
     - name: go_BindgenKmeans
       run: |
@@ -91,7 +87,7 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm
-        cd ../../
+      # ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm.so
         
     - name: go_BindgenWasi
       run: |
@@ -99,7 +95,7 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
-        cd ../../
+      # ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm.so
 
     - name: go_Mobilenet
       run: |
@@ -107,7 +103,7 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build --tags tensorflow
         ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
-        cd ../../
+      # ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
         
     - name: go_MobilenetFood
       run: |
@@ -115,12 +111,12 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build --tags tensorflow
         ./mobilenet_food rust_mobilenet_food_lib_bg.wasm food.jpg
-        cd ../../
+      # ./mobilenet_food rust_mobilenet_food_lib_bg.wasm.so food.jpg
         
-    - name: go_mtcnn
-      run: |
-        cd wasmedge-go-examples/go_mtcnn
-        go get -u github.com/second-state/WasmEdge-go/wasmedge
-        go build --tags image --tags tensorflow
-        ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
-        cd ../../
+    #- name: go_mtcnn
+    #  run: |
+    #    cd wasmedge-go-examples/go_mtcnn
+    #    go get -u github.com/second-state/WasmEdge-go/wasmedge
+    #    go build --tags image --tags tensorflow
+    #    ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
+    #    ./mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out.jpg
