@@ -1,0 +1,57 @@
+name: examples
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'info' 
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - name: Install apt-get packages
+      run: |
+        sudo ACCEPT_EULA=Y apt-get update
+        sudo ACCEPT_EULA=Y apt-get upgrade
+        sudo apt-get install wget git curl software-properties-common
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.0
+        
+    - name: Install WasmEdge
+      run: |
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -e all -p /usr/local
+
+    - name: Install the examples
+      run: |
+        git clone https://github.com/second-state/wasmedge-go-examples
+        cd wasmedge-go-examples
+
+    - name: go_PrintFibonacci
+      run: |
+        cd go_PrintFibonacci
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./print_fibonacci
+        cd ../
+
+    - name: go_Mobilenet
+      run: |
+        cd go_Mobilenet
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
+        ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
+        cd ../
