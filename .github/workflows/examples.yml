@@ -83,7 +83,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm
-        ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm.so
         cd ../../
         
     - name: go_BindgenKmeans
@@ -92,7 +91,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm
-        ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm.so
         cd ../../
         
     - name: go_BindgenWasi
@@ -101,7 +99,6 @@ jobs:
         go get -u github.com/second-state/WasmEdge-go/wasmedge
         go build
         ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
-        ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm.so
         cd ../../
 
     #- name: go_Mobilenet
