@@ -18,7 +18,7 @@ jobs:
     
     strategy:
       matrix:
-        go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
+        go: [ '1.17.x', '1.16.x', '1.15.x', '1.17', '1.16', '1.15' ]
     name: Run WasmEdge-go-examples with Go ${{ matrix.go }}
 
     steps:
@@ -39,7 +39,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -e all -p /usr/local
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local
 
     - name: Install the examples
       run: |
@@ -54,11 +54,11 @@ jobs:
         ./print_fibonacci
         cd ../../
 
-    - name: go_Mobilenet
-      run: |
-        cd wasmedge-go-examples/go_Mobilenet
-        go get -u github.com/second-state/WasmEdge-go/wasmedge
-        go build
-        ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
-        ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
-        cd ../../
+    # - name: go_Mobilenet
+    #   run: |
+    #    cd wasmedge-go-examples/go_Mobilenet
+    #    go get -u github.com/second-state/WasmEdge-go/wasmedge
+    #    go build
+    #    ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
+    #    ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
+    #    cd ../../
