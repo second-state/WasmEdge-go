@@ -44,7 +44,6 @@ jobs:
     - name: Install the examples
       run: |
         git clone https://github.com/second-state/wasmedge-go-examples
-        cd wasmedge-go-examples
 
     - name: go_PrintFibonacci
       run: |
@@ -53,9 +52,60 @@ jobs:
         go build
         ./print_fibonacci
         cd ../../
+        
+    - name: go_ReadFile
+      run: |
+        cd wasmedge-go-examples/go_ReadFile
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./read_file rust_readfile.wasm file.txt
+        cd ../../
+        
+    - name: go_WasmAOT
+      run: |
+        cd wasmedge-go-examples/go_WasmAOT
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./wasmAOT fibonacci.wasm fibonacci.wasm.so
+        cd ../../
+        
+    - name: go_ExternRef
+      run: |
+        cd wasmedge-go-examples/go_ExternRef
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./externref funcs.wasm
+        cd ../../
+        
+    - name: go_BindgenFuncs
+      run: |
+        cd wasmedge-go-examples/go_BindgenFuncs
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm
+        ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm.so
+        cd ../../
+        
+    - name: go_BindgenKmeans
+      run: |
+        cd wasmedge-go-examples/go_BindgenKmeans
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm
+        ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm.so
+        cd ../../
+        
+    - name: go_BindgenWasi
+      run: |
+        cd wasmedge-go-examples/go_BindgenWasi
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
+        ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm.so
+        cd ../../
 
-    # - name: go_Mobilenet
-    #   run: |
+    #- name: go_Mobilenet
+    #  run: |
     #    cd wasmedge-go-examples/go_Mobilenet
     #    go get -u github.com/second-state/WasmEdge-go/wasmedge
     #    go build
