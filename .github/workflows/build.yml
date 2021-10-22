@@ -29,20 +29,11 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          sudo ./install_wasmedge.sh /usr/local
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all
       - name: Build WasmEdge-go without any extensions
         run: |
           go build ./wasmedge/
-      - name: Install wasmedge-tensorflow
-        run: |
-          sudo ./install_wasmedge_tensorflow_deps.sh /usr/local
-          sudo ./install_wasmedge_tensorflow.sh /usr/local
-      - name: Instal wasmedge-images
-        run: |
-          sudo ./install_wasmedge_image_deps.sh /usr/local
-          sudo ./install_wasmedge_image.sh /usr/local
       - name: Build WasmEdge-go with tensorflow and images extensions
         run: |
-          sudo ldconfig
           go build -tags image,tensorflow ./wasmedge/
 

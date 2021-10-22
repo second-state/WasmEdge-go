@@ -1,3 +1,9 @@
+### v0.9.0-rc2 (2021-10-23)
+
+Documentation:
+
+* Updated the installation guide.
+
 ### v0.9.0-rc1 (2021-09-24)
 
 Fixed issues:
