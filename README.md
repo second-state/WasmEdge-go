@@ -16,14 +16,30 @@ $ go version
 go version go1.16.5 linux/amd64
 ```
 
-By default, the `WasmEdge-go` only turns on the basic runtime, and the [Installation of `WasmEdge` Shared Library](https://github.com/second-state/WasmEdge-go#wasmedge-shared-library-installation) is required.
+Developers must [install the WasmEdge shared library](https://github.com/WasmEdge/WasmEdge/blob/master/docs/install.md) with the same `WasmEdge-go` release version.
+
+```bash
+wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -p /usr/local -v 0.8.2
+```
+
+For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -p /usr/local -v 0.8.2
+```
+
+Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
 
 Install the `WasmEdge-go` package and build in your Go project directory:
 
 ```bash
-$ go get github.com/second-state/WasmEdge-go
+$ go get github.com/second-state/WasmEdge-go/wasmedge
 $ go build
 ```
+
+## WasmEdge-go Extensions
+
+By default, the `WasmEdge-go` only turns on the basic runtime.
 
 `WasmEdge-go` has the following extensions:
 
@@ -49,52 +65,3 @@ $ go build -tags image,tensorflow
 ```
 
 For examples, please refer to the [example repository](https://github.com/second-state/WasmEdge-go-examples/).
-
-## WasmEdge shared library installation
-
-For `Ubuntu` or `Debian`:
-
-```bash
-$ wget https://github.com/WasmEdge/WasmEdge/releases/download/0.8.2/WasmEdge-0.8.2-ubuntu20.04_amd64.deb
-$ sudo dpkg -i WasmEdge-0.8.2.deb
-```
-
-Or running the script:
-
-```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge.sh
-$ sudo ./install_wasmedge.sh /usr/local
-```
-
-## WasmEdge-tensorflow shared library installation
-
-```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_tensorflow_deps.sh
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_tensorflow.sh
-$ sudo ./install_wasmedge_tensorflow_deps.sh /usr/local
-$ sudo ./install_wasmedge_tensorflow.sh /usr/local
-```
-
-## WasmEdge-image shared library installation
-
-When linking with `Wasmedge-image`, `libjpeg.so.8` and `libpng16.so.16` are required.
-
-For `ubuntu 18.04` or later, the following commands can install these dependencies:
-```bash
-$ sudo apt-get update
-$ sudo apt-get install -y libjpeg-dev libpng-dev
-```
-
-Or you can download and install the pre-built shared libraries for the `manylinux1` platforms:
-
-```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_image_deps.sh
-$ sudo ./install_wasmedge_image_deps.sh /usr/local
-```
-
-Finally, install the `WasmEdge-image`:
-
-```bash
-$ wget https://github.com/second-state/WasmEdge-go/releases/download/v0.8.2/install_wasmedge_image.sh
-$ sudo ./install_wasmedge_image.sh /usr/local
-```
