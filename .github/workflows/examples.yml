@@ -1,0 +1,122 @@
+name: examples
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'info' 
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    
+    strategy:
+      matrix:
+        go: [ '1.17.x', '1.16.x', '1.15.x', '1.17', '1.16', '1.15' ]
+    name: Run WasmEdge-go-examples with Go ${{ matrix.go }}
+
+    steps:
+
+    - name: Install apt-get packages
+      run: |
+        sudo ACCEPT_EULA=Y apt-get update
+        sudo ACCEPT_EULA=Y apt-get upgrade
+        sudo apt-get install wget git curl software-properties-common
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+        
+    - name: Check go version
+      run: go version
+        
+    - name: Install WasmEdge
+      run: |
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all
+
+    - name: Install the examples
+      run: |
+        git clone https://github.com/second-state/wasmedge-go-examples
+
+    - name: go_PrintFibonacci
+      run: |
+        cd wasmedge-go-examples/go_PrintFibonacci
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./print_fibonacci
+        
+    - name: go_ReadFile
+      run: |
+        cd wasmedge-go-examples/go_ReadFile
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./read_file rust_readfile.wasm file.txt
+        
+    - name: go_WasmAOT
+      run: |
+        cd wasmedge-go-examples/go_WasmAOT
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./wasmAOT fibonacci.wasm fibonacci.wasm.so
+        
+    - name: go_ExternRef
+      run: |
+        cd wasmedge-go-examples/go_ExternRef
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./externref funcs.wasm
+        
+    - name: go_BindgenFuncs
+      run: |
+        cd wasmedge-go-examples/go_BindgenFuncs
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm
+    #   ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm.so
+        
+    - name: go_BindgenKmeans
+      run: |
+        cd wasmedge-go-examples/go_BindgenKmeans
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm
+      # ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm.so
+        
+    - name: go_BindgenWasi
+      run: |
+        cd wasmedge-go-examples/go_BindgenWasi
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build
+        ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
+      # ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm.so
+
+    - name: go_Mobilenet
+      run: |
+        cd wasmedge-go-examples/go_Mobilenet
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build --tags tensorflow
+        ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
+      # ./mobilenet rust_mobilenet_lib_bg.wasm.so grace_hopper.jpg
+        
+    - name: go_MobilenetFood
+      run: |
+        cd wasmedge-go-examples/go_MobilenetFood
+        go get -u github.com/second-state/WasmEdge-go/wasmedge
+        go build --tags tensorflow
+        ./mobilenet_food rust_mobilenet_food_lib_bg.wasm food.jpg
+      # ./mobilenet_food rust_mobilenet_food_lib_bg.wasm.so food.jpg
+        
+    #- name: go_mtcnn
+    #  run: |
+    #    cd wasmedge-go-examples/go_mtcnn
+    #    go get -u github.com/second-state/WasmEdge-go/wasmedge
+    #    go build --tags image --tags tensorflow
+    #    ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
+    #    ./mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out.jpg
