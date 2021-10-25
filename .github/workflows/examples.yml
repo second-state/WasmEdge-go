@@ -156,4 +156,4 @@ jobs:
         go build --tags image,tensorflow
         ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
         ../go_WasmAOT/wasmAOT rust_mtcnn.wasm rust_mtcnn.wasm.so
-        ./mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out.jpg
+        ./mtcnn rust_mtcnn.wasm.so mtcnn.pb solvay.jpg out2.jpg
