@@ -1,26 +1,12 @@
 package wasmedge
 
-/*
-#include <wasmedge.h>
-typedef void (*wasmedgego_HostFuncWrapper)
-  (void *, void *, WasmEdge_MemoryInstanceContext *, const WasmEdge_Value *, const uint32_t, WasmEdge_Value *, const uint32_t);
-
-WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
-                                  WasmEdge_MemoryInstanceContext *MemCxt,
-                                  const WasmEdge_Value *Params, const uint32_t ParamLen,
-                                  WasmEdge_Value *Returns, const uint32_t ReturnLen);
-*/
+// #include <wasmedge/wasmedge.h>
 import "C"
 import (
 	"reflect"
 	"sync"
 	"unsafe"
 )
-
-type HostFunction struct {
-	_inner *C.WasmEdge_HostFunctionContext
-	_index uint
-}
 
 type hostFunctionSignature func(data interface{}, mem *Memory, params []interface{}) ([]interface{}, Result)
 
@@ -34,7 +20,7 @@ type hostFunctionManager struct {
 	funcs map[uint]hostFunctionSignature
 }
 
-func (self *hostFunctionManager) add(hostfunc hostFunctionSignature) uint {
+func (self *hostFunctionManager) add(hostfunc hostFunctionSignature, hostdata interface{}) uint {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 
@@ -47,7 +33,7 @@ func (self *hostFunctionManager) add(hostfunc hostFunctionSignature) uint {
 		self.idx++
 	}
 	self.funcs[realidx] = hostfunc
-	self.data[realidx] = nil
+	self.data[realidx] = hostdata
 	return realidx
 }
 
@@ -85,7 +71,7 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_Mem
 		sliceHeader.Len = int(paramlen)
 		sliceHeader.Data = uintptr(unsafe.Pointer(params))
 		for i := 0; i < int(paramlen); i++ {
-			goparams[i] = fromWasmEdgeValue(cparams[i], cparams[i].Type)
+			goparams[i] = fromWasmEdgeValue(cparams[i])
 			if cparams[i].Type == C.WasmEdge_ValType_ExternRef && !goparams[i].(ExternRef)._valid {
 				panic("External reference is released")
 			}
@@ -109,30 +95,4 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_Mem
 	}
 
 	return C.WasmEdge_Result{Code: C.uint8_t(err.code)}
-}
-
-func NewHostFunction(functype *FunctionType, fn hostFunctionSignature, cost uint) *HostFunction {
-	cftype := toWasmEdgeFunctionType(functype)
-	defer C.WasmEdge_FunctionTypeDelete(cftype)
-	self := &HostFunction{
-		_inner: nil,
-		_index: 0,
-	}
-
-	self._index = hostfuncMgr.add(fn)
-	chostfunc := C.WasmEdge_HostFunctionCreateBinding(cftype, C.wasmedgego_HostFuncWrapper(C.wasmedgego_HostFuncInvoke), unsafe.Pointer(uintptr(self._index)), C.uint64_t(cost))
-	if chostfunc == nil {
-		hostfuncMgr.del(self._index)
-		return nil
-	}
-	self._inner = chostfunc
-	return self
-}
-
-func (self *HostFunction) Delete() {
-	if self._inner != nil {
-		C.WasmEdge_HostFunctionDelete(self._inner)
-		self._inner = nil
-		hostfuncMgr.del(self._index)
-	}
 }
