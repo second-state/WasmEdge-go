@@ -1,6 +1,6 @@
 package wasmedge
 
-// #include <wasmedge.h>
+// #include <wasmedge/wasmedge.h>
 import "C"
 
 type Limit struct {
@@ -12,13 +12,31 @@ type Limit struct {
 func NewLimit(minVal uint) *Limit {
 	l := &Limit{
 		min:    minVal,
+		max:    minVal,
 		hasmax: false,
 	}
 	return l
 }
 
-func (l *Limit) WithMaxVal(maxVal uint) *Limit {
-	l.hasmax = true
-	l.max = maxVal
-	return l
+func NewLimitWithMax(minVal uint, maxVal uint) *Limit {
+	if maxVal >= minVal {
+		return &Limit{
+			min:    minVal,
+			max:    maxVal,
+			hasmax: true,
+		}
+	}
+	return nil
+}
+
+func (l *Limit) HasMax() bool {
+	return l.hasmax
+}
+
+func (l *Limit) GetMin() uint {
+	return l.min
+}
+
+func (l *Limit) GetMax() uint {
+	return l.max
 }
