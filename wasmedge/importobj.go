@@ -1,23 +1,21 @@
 package wasmedge
 
-// #include <wasmedge.h>
+// #include <wasmedge/wasmedge.h>
 import "C"
 
 type ImportObject struct {
 	_inner     *C.WasmEdge_ImportObjectContext
 	_hostfuncs []uint
-	_data      interface{}
 }
 
-func NewImportObject(modname string, additional interface{}) *ImportObject {
-	self := &ImportObject{
-		_inner: C.WasmEdge_ImportObjectCreate(toWasmEdgeStringWrap(modname), nil),
-		_data:  additional,
-	}
-	if self._inner == nil {
+func NewImportObject(modname string) *ImportObject {
+	impobj := C.WasmEdge_ImportObjectCreate(toWasmEdgeStringWrap(modname))
+	if impobj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{
+		_inner: impobj,
+	}
 }
 
 func NewWasiImportObject(args []string, envs []string, dirs []string, preopens []string) *ImportObject {
@@ -125,12 +123,11 @@ func (self *ImportObject) InitWasmEdgeProcess(allowedcmds []string, allowall boo
 	freeCStringArray(ccmds)
 }
 
-func (self *ImportObject) AddHostFunction(name string, inst *HostFunction) {
+func (self *ImportObject) AddFunction(name string, inst *Function) {
 	hostfuncMgr.mu.Lock()
 	defer hostfuncMgr.mu.Unlock()
-	hostfuncMgr.data[inst._index] = self._data
 
-	C.WasmEdge_ImportObjectAddHostFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	C.WasmEdge_ImportObjectAddFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	self._hostfuncs = append(self._hostfuncs, inst._index)
 	inst._inner = nil
 }
