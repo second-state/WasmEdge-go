@@ -9,43 +9,35 @@ type Executor struct {
 }
 
 func NewExecutor() *Executor {
-	self := &Executor{
-		_inner: C.WasmEdge_ExecutorCreate(nil, nil),
-	}
-	if self._inner == nil {
+	executor := C.WasmEdge_ExecutorCreate(nil, nil)
+	if executor == nil {
 		return nil
 	}
-	return self
+	return &Executor{_inner: executor}
 }
 
 func NewExecutorWithConfig(conf *Configure) *Executor {
-	self := &Executor{
-		_inner: C.WasmEdge_ExecutorCreate(conf._inner, nil),
-	}
-	if self._inner == nil {
+	executor := C.WasmEdge_ExecutorCreate(conf._inner, nil)
+	if executor == nil {
 		return nil
 	}
-	return self
+	return &Executor{_inner: executor}
 }
 
 func NewExecutorWithStatistics(stat *Statistics) *Executor {
-	self := &Executor{
-		_inner: C.WasmEdge_ExecutorCreate(nil, stat._inner),
-	}
-	if self._inner == nil {
+	executor := C.WasmEdge_ExecutorCreate(nil, stat._inner)
+	if executor == nil {
 		return nil
 	}
-	return self
+	return &Executor{_inner: executor}
 }
 
 func NewExecutorWithConfigAndStatistics(conf *Configure, stat *Statistics) *Executor {
-	self := &Executor{
-		_inner: C.WasmEdge_ExecutorCreate(conf._inner, stat._inner),
-	}
-	if self._inner == nil {
+	executor := C.WasmEdge_ExecutorCreate(conf._inner, stat._inner)
+	if executor == nil {
 		return nil
 	}
-	return self
+	return &Executor{_inner: executor}
 }
 
 func (self *Executor) Instantiate(store *Store, ast *AST) error {

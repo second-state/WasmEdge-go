@@ -9,23 +9,19 @@ type Compiler struct {
 }
 
 func NewCompiler() *Compiler {
-	self := &Compiler{
-		_inner: C.WasmEdge_CompilerCreate(nil),
-	}
-	if self._inner == nil {
+	compiler := C.WasmEdge_CompilerCreate(nil)
+	if compiler == nil {
 		return nil
 	}
-	return self
+	return &Compiler{_inner: compiler}
 }
 
 func NewCompilerWithConfig(conf *Configure) *Compiler {
-	self := &Compiler{
-		_inner: C.WasmEdge_CompilerCreate(conf._inner),
-	}
-	if self._inner == nil {
+	compiler := C.WasmEdge_CompilerCreate(conf._inner)
+	if compiler == nil {
 		return nil
 	}
-	return self
+	return &Compiler{_inner: compiler}
 }
 
 func (self *Compiler) Compile(inpath string, outpath string) error {

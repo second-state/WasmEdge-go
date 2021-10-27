@@ -44,13 +44,11 @@ func (self *Store) getExports(exportlen C.uint32_t, getfunc interface{}, modname
 }
 
 func NewStore() *Store {
-	self := &Store{
-		_inner: C.WasmEdge_StoreCreate(),
-	}
-	if self._inner == nil {
+	store := C.WasmEdge_StoreCreate()
+	if store == nil {
 		return nil
 	}
-	return self
+	return &Store{_inner: store}
 }
 
 func (self *Store) FindFunction(name string) *Function {

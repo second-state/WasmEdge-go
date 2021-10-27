@@ -9,13 +9,11 @@ type ImportObject struct {
 }
 
 func NewImportObject(modname string) *ImportObject {
-	impobj := C.WasmEdge_ImportObjectCreate(toWasmEdgeStringWrap(modname))
-	if impobj == nil {
+	obj := C.WasmEdge_ImportObjectCreate(toWasmEdgeStringWrap(modname))
+	if obj == nil {
 		return nil
 	}
-	return &ImportObject{
-		_inner: impobj,
-	}
+	return &ImportObject{_inner: obj}
 }
 
 func NewWasiImportObject(args []string, envs []string, dirs []string, preopens []string) *ImportObject {
@@ -40,22 +38,20 @@ func NewWasiImportObject(args []string, envs []string, dirs []string, preopens [
 		ptrpreopens = &cpreopens[0]
 	}
 
-	self := &ImportObject{
-		_inner: C.WasmEdge_ImportObjectCreateWASI(ptrargs, C.uint32_t(len(cargs)),
-			ptrenvs, C.uint32_t(len(cenvs)),
-			ptrdirs, C.uint32_t(len(cdirs)),
-			ptrpreopens, C.uint32_t(len(cpreopens))),
-	}
+	obj := C.WasmEdge_ImportObjectCreateWASI(ptrargs, C.uint32_t(len(cargs)),
+		ptrenvs, C.uint32_t(len(cenvs)),
+		ptrdirs, C.uint32_t(len(cdirs)),
+		ptrpreopens, C.uint32_t(len(cpreopens)))
 
 	freeCStringArray(cargs)
 	freeCStringArray(cenvs)
 	freeCStringArray(cdirs)
 	freeCStringArray(cpreopens)
 
-	if self._inner == nil {
+	if obj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{_inner: obj}
 }
 
 func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, preopens []string) {
@@ -99,16 +95,14 @@ func NewWasmEdgeProcessImportObject(allowedcmds []string, allowall bool) *Import
 		ptrcmds = &ccmds[0]
 	}
 
-	self := &ImportObject{
-		_inner: C.
-			WasmEdge_ImportObjectCreateWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall)),
-	}
+	obj := C.WasmEdge_ImportObjectCreateWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
 
 	freeCStringArray(ccmds)
-	if self._inner == nil {
+
+	if obj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{_inner: obj}
 }
 
 func (self *ImportObject) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {

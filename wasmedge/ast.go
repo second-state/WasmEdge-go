@@ -45,13 +45,13 @@ func NewFunctionType(params []ValType, returns []ValType) *FunctionType {
 	if len(returns) > 0 {
 		ptrreturns = &(creturns[0])
 	}
-
-	self := &FunctionType{
-		_inner: C.WasmEdge_FunctionTypeCreate(
-			ptrparams, C.uint32_t(len(params)),
-			ptrreturns, C.uint32_t(len(returns))),
+	ftype := C.WasmEdge_FunctionTypeCreate(
+		ptrparams, C.uint32_t(len(params)),
+		ptrreturns, C.uint32_t(len(returns)))
+	if ftype == nil {
+		return nil
 	}
-	return self
+	return &FunctionType{_inner: ftype}
 }
 
 func (self *FunctionType) GetParametersLength() uint {
@@ -59,19 +59,21 @@ func (self *FunctionType) GetParametersLength() uint {
 }
 
 func (self *FunctionType) GetParameters() []ValType {
-	var valtype []ValType
-	var cvaltype []C.enum_WasmEdge_ValType
 	if self._inner != nil {
+		var valtype []ValType
+		var cvaltype []C.enum_WasmEdge_ValType
 		ltypes := C.WasmEdge_FunctionTypeGetParametersLength(self._inner)
 		if uint(ltypes) > 0 {
+			valtype = make([]ValType, uint(ltypes))
 			cvaltype = make([]C.enum_WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetParameters(self._inner, &(cvaltype[0]), ltypes)
 		}
 		for i, val := range cvaltype {
 			valtype[i] = ValType(val)
 		}
+		return valtype
 	}
-	return valtype
+	return nil
 }
 
 func (self *FunctionType) GetReturnsLength() uint {
@@ -79,19 +81,21 @@ func (self *FunctionType) GetReturnsLength() uint {
 }
 
 func (self *FunctionType) GetReturns() []ValType {
-	var valtype []ValType
-	var cvaltype []C.enum_WasmEdge_ValType
 	if self._inner != nil {
+		var valtype []ValType
+		var cvaltype []C.enum_WasmEdge_ValType
 		ltypes := C.WasmEdge_FunctionTypeGetReturnsLength(self._inner)
 		if uint(ltypes) > 0 {
+			valtype = make([]ValType, uint(ltypes))
 			cvaltype = make([]C.enum_WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetReturns(self._inner, &(cvaltype[0]), ltypes)
 		}
 		for i, val := range cvaltype {
 			valtype[i] = ValType(val)
 		}
+		return valtype
 	}
-	return valtype
+	return nil
 }
 
 func (self *FunctionType) Delete() {

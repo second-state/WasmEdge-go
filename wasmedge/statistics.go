@@ -8,13 +8,11 @@ type Statistics struct {
 }
 
 func NewStatistics() *Statistics {
-	self := &Statistics{
-		_inner: C.WasmEdge_StatisticsCreate(),
-	}
-	if self._inner == nil {
+	stat := C.WasmEdge_StatisticsCreate()
+	if stat == nil {
 		return nil
 	}
-	return self
+	return &Statistics{_inner: stat}
 }
 
 func (self *Statistics) GetInstrCount() uint {

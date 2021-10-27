@@ -9,23 +9,19 @@ type Loader struct {
 }
 
 func NewLoader() *Loader {
-	self := &Loader{
-		_inner: C.WasmEdge_LoaderCreate(nil),
-	}
-	if self._inner == nil {
+	loader := C.WasmEdge_LoaderCreate(nil)
+	if loader == nil {
 		return nil
 	}
-	return self
+	return &Loader{_inner: loader}
 }
 
 func NewLoaderWithConfig(conf *Configure) *Loader {
-	self := &Loader{
-		_inner: C.WasmEdge_LoaderCreate(conf._inner),
-	}
-	if self._inner == nil {
+	loader := C.WasmEdge_LoaderCreate(conf._inner)
+	if loader == nil {
 		return nil
 	}
-	return self
+	return &Loader{_inner: loader}
 }
 
 func (self *Loader) LoadFile(path string) (*AST, error) {

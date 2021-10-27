@@ -78,9 +78,7 @@ func NewTable(ttype *TableType) *Table {
 	if table == nil {
 		return nil
 	}
-	return &Table{
-		_inner: table,
-	}
+	return &Table{_inner: table}
 }
 
 func (self *Table) GetTableType() *TableType {
@@ -132,9 +130,7 @@ func NewMemory(mtype *MemoryType) *Memory {
 	if memory == nil {
 		return nil
 	}
-	return &Memory{
-		_inner: memory,
-	}
+	return &Memory{_inner: memory}
 }
 
 func (self *Memory) GetMemoryType() *MemoryType {
@@ -195,9 +191,7 @@ func NewGlobal(gtype *GlobalType, val interface{}) *Global {
 	if global == nil {
 		return nil
 	}
-	return &Global{
-		_inner: global,
-	}
+	return &Global{_inner: global}
 }
 
 func (self *Global) GetGlobalType() *GlobalType {

@@ -24,43 +24,35 @@ const (
 )
 
 func NewVM() *VM {
-	self := &VM{
-		_inner: C.WasmEdge_VMCreate(nil, nil),
-	}
-	if self._inner == nil {
+	vm := C.WasmEdge_VMCreate(nil, nil)
+	if vm == nil {
 		return nil
 	}
-	return self
+	return &VM{_inner: vm}
 }
 
 func NewVMWithConfig(conf *Configure) *VM {
-	self := &VM{
-		_inner: C.WasmEdge_VMCreate(conf._inner, nil),
-	}
-	if self._inner == nil {
+	vm := C.WasmEdge_VMCreate(conf._inner, nil)
+	if vm == nil {
 		return nil
 	}
-	return self
+	return &VM{_inner: vm}
 }
 
 func NewVMWithStore(store *Store) *VM {
-	self := &VM{
-		_inner: C.WasmEdge_VMCreate(nil, store._inner),
-	}
-	if self._inner == nil {
+	vm := C.WasmEdge_VMCreate(nil, store._inner)
+	if vm == nil {
 		return nil
 	}
-	return self
+	return &VM{_inner: vm}
 }
 
 func NewVMWithConfigAndStore(conf *Configure, store *Store) *VM {
-	self := &VM{
-		_inner: C.WasmEdge_VMCreate(conf._inner, store._inner),
-	}
-	if self._inner == nil {
+	vm := C.WasmEdge_VMCreate(conf._inner, store._inner)
+	if vm == nil {
 		return nil
 	}
-	return self
+	return &VM{_inner: vm}
 }
 
 func (self *VM) RegisterWasmFile(modname string, path string) error {
