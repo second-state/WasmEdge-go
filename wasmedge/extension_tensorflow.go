@@ -11,21 +11,17 @@ package wasmedge
 import "C"
 
 func NewTensorflowImportObject() *ImportObject {
-	self := &ImportObject{
-		_inner: C.WasmEdge_Tensorflow_ImportObjectCreate(),
-	}
-	if self._inner == nil {
+	obj := C.WasmEdge_Tensorflow_ImportObjectCreate()
+	if obj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{_inner: obj}
 }
 
 func NewTensorflowLiteImportObject() *ImportObject {
-	self := &ImportObject{
-		_inner: C.WasmEdge_TensorflowLite_ImportObjectCreate(),
-	}
-	if self._inner == nil {
+	obj := C.WasmEdge_TensorflowLite_ImportObjectCreate()
+	if obj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{_inner: obj}
 }

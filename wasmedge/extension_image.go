@@ -10,11 +10,9 @@ package wasmedge
 import "C"
 
 func NewImageImportObject() *ImportObject {
-	self := &ImportObject{
-		_inner: C.WasmEdge_Image_ImportObjectCreate(),
-	}
-	if self._inner == nil {
+	obj := C.WasmEdge_Image_ImportObjectCreate()
+	if obj == nil {
 		return nil
 	}
-	return self
+	return &ImportObject{_inner: obj}
 }

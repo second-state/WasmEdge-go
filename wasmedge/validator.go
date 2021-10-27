@@ -8,23 +8,19 @@ type Validator struct {
 }
 
 func NewValidator() *Validator {
-	self := &Validator{
-		_inner: C.WasmEdge_ValidatorCreate(nil),
-	}
-	if self._inner == nil {
+	validator := C.WasmEdge_ValidatorCreate(nil)
+	if validator == nil {
 		return nil
 	}
-	return self
+	return &Validator{_inner: validator}
 }
 
 func NewValidatorWithConfig(conf *Configure) *Validator {
-	self := &Validator{
-		_inner: C.WasmEdge_ValidatorCreate(conf._inner),
-	}
-	if self._inner == nil {
+	validator := C.WasmEdge_ValidatorCreate(conf._inner)
+	if validator == nil {
 		return nil
 	}
-	return self
+	return &Validator{_inner: validator}
 }
 
 func (self *Validator) Validate(ast *AST) error {
