@@ -3,6 +3,6 @@ package wasmedge
 /*
 #cgo linux LDFLAGS: -lwasmedge_c
 
-#include <wasmedge.h>
+#include <wasmedge/wasmedge.h>
 */
 import "C"

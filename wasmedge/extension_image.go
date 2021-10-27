@@ -3,9 +3,9 @@
 package wasmedge
 
 /*
-#cgo linux LDFLAGS: -lwasmedge-image_c -ljpeg -lpng
+#cgo linux LDFLAGS: -lwasmedge-image_c
 
-#include <wasmedge-image.h>
+#include <wasmedge/wasmedge-image.h>
 */
 import "C"
 

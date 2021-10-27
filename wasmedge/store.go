@@ -1,6 +1,6 @@
 package wasmedge
 
-// #include <wasmedge.h>
+// #include <wasmedge/wasmedge.h>
 // typedef uint32_t (*wasmedgego_GetExport)
 //	 (const WasmEdge_StoreContext *, WasmEdge_String *, const uint32_t);
 // typedef uint32_t (*wasmedgego_GetRegExport)

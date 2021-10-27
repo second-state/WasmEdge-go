@@ -1,6 +1,6 @@
 package wasmedge
 
-// #include <wasmedge.h>
+// #include <wasmedge/wasmedge.h>
 import "C"
 
 type Proposal C.enum_WasmEdge_Proposal
