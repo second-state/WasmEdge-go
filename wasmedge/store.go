@@ -39,7 +39,6 @@ func (self *Store) getExports(exportlen C.uint32_t, getfunc interface{}, modname
 	names := make([]string, int(exportlen))
 	for i := 0; i < int(exportlen); i++ {
 		names[i] = fromWasmEdgeString(cnames[i])
-		C.WasmEdge_StringDelete(cnames[i])
 	}
 	return names
 }
@@ -199,7 +198,6 @@ func (self *Store) ListModule() []string {
 	names := make([]string, int(modlen))
 	for i := 0; i < int(modlen); i++ {
 		names[i] = fromWasmEdgeString(cnames[i])
-		C.WasmEdge_StringDelete(cnames[i])
 	}
 	return names
 }
