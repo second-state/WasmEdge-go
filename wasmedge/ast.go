@@ -3,6 +3,15 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 
+type ExternType C.enum_WasmEdge_ExternalType
+
+const (
+	ExternType_Function = ExternType(C.WasmEdge_ExternalType_Function)
+	ExternType_Table    = ExternType(C.WasmEdge_ExternalType_Table)
+	ExternType_Memory   = ExternType(C.WasmEdge_ExternalType_Memory)
+	ExternType_Global   = ExternType(C.WasmEdge_ExternalType_Global)
+)
+
 type AST struct {
 	_inner *C.WasmEdge_ASTModuleContext
 }
@@ -21,6 +30,54 @@ type MemoryType struct {
 
 type GlobalType struct {
 	_inner *C.WasmEdge_GlobalTypeContext
+}
+
+type ImportType struct {
+	_inner *C.WasmEdge_ImportTypeContext
+	_ast   *C.WasmEdge_ASTModuleContext
+}
+
+type ExportType struct {
+	_inner *C.WasmEdge_ExportTypeContext
+	_ast   *C.WasmEdge_ASTModuleContext
+}
+
+func (self *AST) ListImports() []*ImportType {
+	if self._inner != nil {
+		var imptype []*ImportType
+		var cimptype []*C.WasmEdge_ImportTypeContext
+		ltypes := C.WasmEdge_ASTModuleListImportsLength(self._inner)
+		if uint(ltypes) > 0 {
+			imptype = make([]*ImportType, uint(ltypes))
+			cimptype = make([]*C.WasmEdge_ImportTypeContext, uint(ltypes))
+			C.WasmEdge_ASTModuleListImports(self._inner, &(cimptype[0]), ltypes)
+		}
+		for i, val := range cimptype {
+			imptype[i]._inner = val
+			imptype[i]._ast = self._inner
+		}
+		return imptype
+	}
+	return nil
+}
+
+func (self *AST) ListExports() []*ExportType {
+	if self._inner != nil {
+		var exptype []*ExportType
+		var cexptype []*C.WasmEdge_ExportTypeContext
+		ltypes := C.WasmEdge_ASTModuleListExportsLength(self._inner)
+		if uint(ltypes) > 0 {
+			exptype = make([]*ExportType, uint(ltypes))
+			cexptype = make([]*C.WasmEdge_ExportTypeContext, uint(ltypes))
+			C.WasmEdge_ASTModuleListExports(self._inner, &(cexptype[0]), ltypes)
+		}
+		for i, val := range cexptype {
+			exptype[i]._inner = val
+			exptype[i]._ast = self._inner
+		}
+		return exptype
+	}
+	return nil
 }
 
 func (self *AST) Delete() {
@@ -178,4 +235,74 @@ func (self *GlobalType) GetMutability() ValMut {
 func (self *GlobalType) Delete() {
 	C.WasmEdge_GlobalTypeDelete(self._inner)
 	self._inner = nil
+}
+
+func (self *ImportType) GetExternalType() ExternType {
+	return ExternType(C.WasmEdge_ImportTypeGetExternalType(self._inner))
+}
+
+func (self *ImportType) GetModuleName() string {
+	return fromWasmEdgeString(C.WasmEdge_ImportTypeGetModuleName(self._inner))
+}
+
+func (self *ImportType) GetExternalName() string {
+	return fromWasmEdgeString(C.WasmEdge_ImportTypeGetExternalName(self._inner))
+}
+
+func (self *ImportType) GetExternalValue() interface{} {
+	if self._inner == nil {
+		return nil
+	}
+	switch self.GetExternalType() {
+	case ExternType_Function:
+		return &FunctionType{
+			_inner: C.WasmEdge_ImportTypeGetFunctionType(self._ast, self._inner),
+		}
+	case ExternType_Table:
+		return &TableType{
+			_inner: C.WasmEdge_ImportTypeGetTableType(self._ast, self._inner),
+		}
+	case ExternType_Memory:
+		return &MemoryType{
+			_inner: C.WasmEdge_ImportTypeGetMemoryType(self._ast, self._inner),
+		}
+	case ExternType_Global:
+		return &GlobalType{
+			_inner: C.WasmEdge_ImportTypeGetGlobalType(self._ast, self._inner),
+		}
+	}
+	panic("Unknown external type")
+}
+
+func (self *ExportType) GetExternalType() ExternType {
+	return ExternType(C.WasmEdge_ExportTypeGetExternalType(self._inner))
+}
+
+func (self *ExportType) GetExternalName() string {
+	return fromWasmEdgeString(C.WasmEdge_ExportTypeGetExternalName(self._inner))
+}
+
+func (self *ExportType) GetExternalValue() interface{} {
+	if self._inner == nil {
+		return nil
+	}
+	switch self.GetExternalType() {
+	case ExternType_Function:
+		return &FunctionType{
+			_inner: C.WasmEdge_ExportTypeGetFunctionType(self._ast, self._inner),
+		}
+	case ExternType_Table:
+		return &TableType{
+			_inner: C.WasmEdge_ExportTypeGetTableType(self._ast, self._inner),
+		}
+	case ExternType_Memory:
+		return &MemoryType{
+			_inner: C.WasmEdge_ExportTypeGetMemoryType(self._ast, self._inner),
+		}
+	case ExternType_Global:
+		return &GlobalType{
+			_inner: C.WasmEdge_ExportTypeGetGlobalType(self._ast, self._inner),
+		}
+	}
+	panic("Unknown external type")
 }
