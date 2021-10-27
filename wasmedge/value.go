@@ -1,6 +1,6 @@
 package wasmedge
 
-// #include <wasmedge.h>
+// #include <wasmedge/wasmedge.h>
 import "C"
 import (
 	"encoding/binary"
@@ -134,8 +134,9 @@ type ExternRef struct {
 }
 
 func NewExternRef(ptr interface{}) ExternRef {
+	// Gen an i64 WasmEdge_Value and change type to WasmEdge_ValType_ExternRef
 	idx := uint64(externRefMgr.add(ptr))
-	val := toWasmEdgeValue(idx)
+	val := C.WasmEdge_ValueGenI64(C.int64_t(idx))
 	val.Type = C.WasmEdge_ValType_ExternRef
 	return ExternRef{
 		_inner: val,
@@ -145,13 +146,15 @@ func NewExternRef(ptr interface{}) ExternRef {
 
 func (self ExternRef) Release() {
 	self._valid = false
-	idx := uint(fromWasmEdgeValue(self._inner, C.WasmEdge_ValType_I64).(int64))
+	// Change type back to WasmEdge_ValType_I64 and get the i64 value
+	idx := uint(C.WasmEdge_ValueGetI64(self._inner))
 	externRefMgr.del(idx)
 }
 
 func (self ExternRef) GetRef() interface{} {
 	if self._valid {
-		idx := uint(fromWasmEdgeValue(self._inner, C.WasmEdge_ValType_I64).(int64))
+		// Get the original i64 value
+		idx := uint(C.WasmEdge_ValueGetI64(self._inner))
 		return externRefMgr.get(idx)
 	}
 	return nil
@@ -225,8 +228,8 @@ func toWasmEdgeValue(value interface{}) C.WasmEdge_Value {
 	}
 }
 
-func fromWasmEdgeValue(value C.WasmEdge_Value, origtype C.enum_WasmEdge_ValType) interface{} {
-	switch origtype {
+func fromWasmEdgeValue(value C.WasmEdge_Value) interface{} {
+	switch value.Type {
 	case C.WasmEdge_ValType_I32:
 		return int32(C.WasmEdge_ValueGetI32(value))
 	case C.WasmEdge_ValType_I64:
@@ -341,19 +344,19 @@ func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals 
 	return cvals
 }
 
-func fromWasmEdgeValueSlide(cvals []C.WasmEdge_Value, types []C.enum_WasmEdge_ValType) []interface{} {
-	if len(types) > 0 {
-		vals := make([]interface{}, len(types))
+func fromWasmEdgeValueSlide(cvals []C.WasmEdge_Value) []interface{} {
+	if len(cvals) > 0 {
+		vals := make([]interface{}, len(cvals))
 		for i, cval := range cvals {
-			vals[i] = fromWasmEdgeValue(cval, types[i])
+			vals[i] = fromWasmEdgeValue(cval)
 		}
 		return vals
 	}
 	return []interface{}{}
 }
 
-func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cvals []C.WasmEdge_Value, types []C.enum_WasmEdge_ValType) (interface{}, error) {
-	returns := fromWasmEdgeValueSlide(cvals, types)
+func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cvals []C.WasmEdge_Value) (interface{}, error) {
+	returns := fromWasmEdgeValueSlide(cvals)
 	switch rettype {
 	case Bindgen_return_void:
 		return nil, nil
