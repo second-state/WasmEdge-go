@@ -8,15 +8,15 @@ const (
 
 func TestNewLimit(t *testing.T) {
 	l := NewLimit(minVal)
-	if l.min != minVal {
+	if l.GetMin() != minVal {
 		t.Fatal("wrong min value")
 	}
-	if l.hasmax {
+	if l.HasMax() {
 		t.Fatal("should have no max value")
 	}
 
-	l.WithMaxVal(minVal * 2)
-	if !l.hasmax {
+	l = NewLimitWithMax(minVal, minVal*2)
+	if !l.HasMax() {
 		t.Fatal("should have max value")
 	}
 }
