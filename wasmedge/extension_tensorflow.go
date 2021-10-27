@@ -5,8 +5,8 @@ package wasmedge
 /*
 #cgo linux LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow -ltensorflow_framework -ltensorflowlite_c
 
-#include <wasmedge-tensorflow.h>
-#include <wasmedge-tensorflowlite.h>
+#include <wasmedge/wasmedge-tensorflow.h>
+#include <wasmedge/wasmedge-tensorflowlite.h>
 */
 import "C"
 

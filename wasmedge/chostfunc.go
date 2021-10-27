@@ -1,7 +1,7 @@
 package wasmedge
 
 /*
-#include <wasmedge.h>
+#include <wasmedge/wasmedge.h>
 // The gateway function
 WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
                            WasmEdge_MemoryInstanceContext *MemCxt,
