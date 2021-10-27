@@ -1,7 +1,7 @@
 package wasmedge
 
 /*
-#include <wasmedge.h>
+#include <wasmedge/wasmedge.h>
 size_t _GoStringLen(_GoString_ s);
 const char *_GoStringPtr(_GoString_ s);
 */
@@ -184,7 +184,7 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
 	cparams := toWasmEdgeValueSlide(params...)
-	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
+	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
 	if len(cparams) > 0 {
@@ -193,11 +193,14 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 	if len(creturns) > 0 {
 		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
 	}
-	res := C.WasmEdge_VMExecute(self._inner, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
+	res := C.WasmEdge_VMExecute(
+		self._inner, funcstr,
+		ptrparams, C.uint32_t(len(cparams)),
+		ptrreturns, C.uint32_t(len(creturns)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
-	return fromWasmEdgeValueSlide(creturns, ftype._returns), nil
+	return fromWasmEdgeValueSlide(creturns), nil
 }
 
 // Special execute function for running with wasm-bindgen.
@@ -205,7 +208,7 @@ func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...inter
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
 	cparams := toWasmEdgeValueSlideBindgen(self, rettype, nil, params...)
-	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
+	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
 	if len(cparams) > 0 {
@@ -214,12 +217,14 @@ func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...inter
 	if len(creturns) > 0 {
 		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
 	}
-
-	res := C.WasmEdge_VMExecute(self._inner, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
+	res := C.WasmEdge_VMExecute(
+		self._inner, funcstr,
+		ptrparams, C.uint32_t(len(cparams)),
+		ptrreturns, C.uint32_t(len(creturns)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
-	return fromWasmEdgeValueSlideBindgen(self, rettype, nil, creturns, ftype._returns)
+	return fromWasmEdgeValueSlideBindgen(self, rettype, nil, creturns)
 }
 
 func (self *VM) ExecuteRegistered(modname string, funcname string, params ...interface{}) ([]interface{}, error) {
@@ -227,7 +232,7 @@ func (self *VM) ExecuteRegistered(modname string, funcname string, params ...int
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionTypeRegistered(modname, funcname)
 	cparams := toWasmEdgeValueSlide(params...)
-	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
+	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
 	if len(cparams) > 0 {
@@ -236,11 +241,14 @@ func (self *VM) ExecuteRegistered(modname string, funcname string, params ...int
 	if len(creturns) > 0 {
 		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
 	}
-	res := C.WasmEdge_VMExecuteRegistered(self._inner, modstr, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
+	res := C.WasmEdge_VMExecuteRegistered(
+		self._inner, modstr, funcstr,
+		ptrparams, C.uint32_t(len(cparams)),
+		ptrreturns, C.uint32_t(len(creturns)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
-	return fromWasmEdgeValueSlide(creturns, ftype._returns), nil
+	return fromWasmEdgeValueSlide(creturns), nil
 }
 
 // Special execute function for running with wasm-bindgen.
@@ -249,7 +257,7 @@ func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettyp
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
 	cparams := toWasmEdgeValueSlideBindgen(self, rettype, &modname, params...)
-	creturns := make([]C.WasmEdge_Value, len(ftype._returns))
+	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
 	var ptrreturns *C.WasmEdge_Value = nil
 	if len(cparams) > 0 {
@@ -259,26 +267,39 @@ func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettyp
 		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
 	}
 
-	res := C.WasmEdge_VMExecuteRegistered(self._inner, modstr, funcstr, ptrparams, C.uint32_t(len(cparams)), ptrreturns, C.uint32_t(len(creturns)))
+	res := C.WasmEdge_VMExecuteRegistered(
+		self._inner, modstr, funcstr,
+		ptrparams, C.uint32_t(len(cparams)),
+		ptrreturns, C.uint32_t(len(creturns)))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
-	return fromWasmEdgeValueSlideBindgen(self, rettype, &modname, creturns, ftype._returns)
+	return fromWasmEdgeValueSlideBindgen(self, rettype, &modname, creturns)
 }
 
 func (self *VM) GetFunctionType(funcname string) *FunctionType {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	cftype := C.WasmEdge_VMGetFunctionType(self._inner, funcstr)
-	defer C.WasmEdge_FunctionTypeDelete(cftype)
-	return fromWasmEdgeFunctionType(cftype)
+	if cftype != nil {
+		ftype := &FunctionType{
+			_inner: cftype,
+		}
+		return ftype
+	}
+	return nil
 }
 
 func (self *VM) GetFunctionTypeRegistered(modname string, funcname string) *FunctionType {
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	cftype := C.WasmEdge_VMGetFunctionTypeRegistered(self._inner, modstr, funcstr)
-	defer C.WasmEdge_FunctionTypeDelete(cftype)
-	return fromWasmEdgeFunctionType(cftype)
+	if cftype != nil {
+		ftype := &FunctionType{
+			_inner: cftype,
+		}
+		return ftype
+	}
+	return nil
 }
 
 func (self *VM) Cleanup() {
@@ -296,9 +317,7 @@ func (self *VM) GetFunctionList() ([]string, []*FunctionType) {
 	ftypes := make([]*FunctionType, int(funclen))
 	for i := 0; i < int(funclen); i++ {
 		fnames[i] = fromWasmEdgeString(cfnames[i])
-		C.WasmEdge_StringDelete(cfnames[i])
-		ftypes[i] = fromWasmEdgeFunctionType(cftypes[i])
-		C.WasmEdge_FunctionTypeDelete(cftypes[i])
+		ftypes[i] = &FunctionType{_inner: cftypes[i]}
 	}
 	return fnames, ftypes
 }
