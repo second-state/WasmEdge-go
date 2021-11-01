@@ -65,3 +65,7 @@ $ go build -tags image,tensorflow
 ```
 
 For examples, please refer to the [example repository](https://github.com/second-state/WasmEdge-go-examples/).
+
+## WasmEdge-go Documentation
+
+Please refer to the [API Documentation](docs/go_api.md) for details.
