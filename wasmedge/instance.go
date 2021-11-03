@@ -18,10 +18,9 @@ import (
 )
 
 type Function struct {
-	_inner  *C.WasmEdge_FunctionInstanceContext
-	_ishost bool
-	_index  uint
-	_own    bool
+	_inner *C.WasmEdge_FunctionInstanceContext
+	_index uint
+	_own   bool
 }
 
 type Table struct {
@@ -39,7 +38,7 @@ type Global struct {
 	_own   bool
 }
 
-func NewHostFunction(ftype *FunctionType, fn hostFunctionSignature, additional interface{}, cost uint) *Function {
+func NewFunction(ftype *FunctionType, fn hostFunctionSignature, additional interface{}, cost uint) *Function {
 	if ftype == nil {
 		return nil
 	}
@@ -56,10 +55,9 @@ func NewHostFunction(ftype *FunctionType, fn hostFunctionSignature, additional i
 		return nil
 	}
 	res := &Function{
-		_inner:  function,
-		_ishost: true,
-		_index:  index,
-		_own:    true,
+		_inner: function,
+		_index: index,
+		_own:   true,
 	}
 	runtime.SetFinalizer(res, (*Function).Release)
 	return res
@@ -73,7 +71,7 @@ func (self *Function) GetFunctionType() *FunctionType {
 }
 
 func (self *Function) Release() {
-	if self._own && self._ishost && self._inner != nil {
+	if self._own && self._inner != nil {
 		C.WasmEdge_FunctionInstanceDelete(self._inner)
 		hostfuncMgr.del(self._index)
 	}
