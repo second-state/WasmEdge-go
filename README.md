@@ -19,13 +19,13 @@ go version go1.16.5 linux/amd64
 Developers must [install the WasmEdge shared library](https://github.com/WasmEdge/WasmEdge/blob/master/docs/install.md) with the same `WasmEdge-go` release version.
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -p /usr/local -v 0.8.2
+wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.8.2
 ```
 
 For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -p /usr/local -v 0.8.2
+wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.8.2
 ```
 
 Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
@@ -33,7 +33,7 @@ Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` pl
 Install the `WasmEdge-go` package and build in your Go project directory:
 
 ```bash
-$ go get github.com/second-state/WasmEdge-go/wasmedge
+$ go get github.com/second-state/WasmEdge-go/wasmedge@v0.8.2
 $ go build
 ```
 
@@ -45,14 +45,14 @@ By default, the `WasmEdge-go` only turns on the basic runtime.
 
  - Tensorflow
     * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow).
-    * For turning on this extension, the [Installation of `WasmEdge-tensorflow` Shared Library](https://github.com/second-state/WasmEdge-go#wasmedge-tensorflow-shared-library-installation) is required.
+    * The `TensorFlow` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e tensorflow` command.
     * For using this extension, the tag `tensorflow` when building is required:
         ```bash
         $ go build -tags tensorflow
         ```
  - Image
     * This extension supports the host functions in [WasmEdge-image](https://github.com/second-state/WasmEdge-image).
-    * For turning on this extension, the [Installation of `WasmEdge-image` Shared Library](https://github.com/second-state/WasmEdge-go#wasmedge-image-shared-library-installation) is required.
+    * The `Image` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e image` command.
     * For using this extension, the tag `image` when building is required:
         ```bash
         $ go build -tags image
