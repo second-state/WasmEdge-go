@@ -12,24 +12,31 @@ WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
                                   WasmEdge_Value *Returns, const uint32_t ReturnLen);
 */
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Function struct {
 	_inner  *C.WasmEdge_FunctionInstanceContext
 	_ishost bool
 	_index  uint
+	_own    bool
 }
 
 type Table struct {
 	_inner *C.WasmEdge_TableInstanceContext
+	_own   bool
 }
 
 type Memory struct {
 	_inner *C.WasmEdge_MemoryInstanceContext
+	_own   bool
 }
 
 type Global struct {
 	_inner *C.WasmEdge_GlobalInstanceContext
+	_own   bool
 }
 
 func NewHostFunction(ftype *FunctionType, fn hostFunctionSignature, additional interface{}, cost uint) *Function {
@@ -48,26 +55,31 @@ func NewHostFunction(ftype *FunctionType, fn hostFunctionSignature, additional i
 		hostfuncMgr.del(index)
 		return nil
 	}
-	return &Function{
+	res := &Function{
 		_inner:  function,
 		_ishost: true,
 		_index:  index,
+		_own:    true,
 	}
+	runtime.SetFinalizer(res, (*Function).Release)
+	return res
 }
 
 func (self *Function) GetFunctionType() *FunctionType {
-	ftype := &FunctionType{
+	return &FunctionType{
 		_inner: C.WasmEdge_FunctionInstanceGetFunctionType(self._inner),
+		_own:   false,
 	}
-	return ftype
 }
 
-func (self *Function) Delete() {
-	if self._ishost && self._inner != nil {
+func (self *Function) Release() {
+	if self._own && self._ishost && self._inner != nil {
 		C.WasmEdge_FunctionInstanceDelete(self._inner)
-		self._inner = nil
 		hostfuncMgr.del(self._index)
 	}
+	runtime.SetFinalizer(self, nil)
+	self._inner = nil
+	self._own = false
 }
 
 func NewTable(ttype *TableType) *Table {
@@ -78,12 +90,15 @@ func NewTable(ttype *TableType) *Table {
 	if table == nil {
 		return nil
 	}
-	return &Table{_inner: table}
+	res := &Table{_inner: table, _own: true}
+	runtime.SetFinalizer(res, (*Table).Release)
+	return res
 }
 
 func (self *Table) GetTableType() *TableType {
 	return &TableType{
 		_inner: C.WasmEdge_TableInstanceGetTableType(self._inner),
+		_own:   false,
 	}
 }
 
@@ -117,9 +132,13 @@ func (self *Table) Grow(size uint) error {
 	return nil
 }
 
-func (self *Table) Delete() {
-	C.WasmEdge_TableInstanceDelete(self._inner)
+func (self *Table) Release() {
+	if self._own {
+		C.WasmEdge_TableInstanceDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewMemory(mtype *MemoryType) *Memory {
@@ -130,12 +149,15 @@ func NewMemory(mtype *MemoryType) *Memory {
 	if memory == nil {
 		return nil
 	}
-	return &Memory{_inner: memory}
+	res := &Memory{_inner: memory, _own: true}
+	runtime.SetFinalizer(res, (*Memory).Release)
+	return res
 }
 
 func (self *Memory) GetMemoryType() *MemoryType {
 	return &MemoryType{
 		_inner: C.WasmEdge_MemoryInstanceGetMemoryType(self._inner),
+		_own:   false,
 	}
 }
 
@@ -177,9 +199,13 @@ func (self *Memory) GrowPage(size uint) error {
 	return nil
 }
 
-func (self *Memory) Delete() {
-	C.WasmEdge_MemoryInstanceDelete(self._inner)
+func (self *Memory) Release() {
+	if self._own {
+		C.WasmEdge_MemoryInstanceDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewGlobal(gtype *GlobalType, val interface{}) *Global {
@@ -191,12 +217,15 @@ func NewGlobal(gtype *GlobalType, val interface{}) *Global {
 	if global == nil {
 		return nil
 	}
-	return &Global{_inner: global}
+	res := &Global{_inner: global, _own: true}
+	runtime.SetFinalizer(res, (*Global).Release)
+	return res
 }
 
 func (self *Global) GetGlobalType() *GlobalType {
 	return &GlobalType{
 		_inner: C.WasmEdge_GlobalInstanceGetGlobalType(self._inner),
+		_own:   false,
 	}
 }
 
@@ -209,7 +238,11 @@ func (self *Global) SetValue(val interface{}) {
 	C.WasmEdge_GlobalInstanceSetValue(self._inner, toWasmEdgeValue(val))
 }
 
-func (self *Global) Delete() {
-	C.WasmEdge_GlobalInstanceDelete(self._inner)
+func (self *Global) Release() {
+	if self._own {
+		C.WasmEdge_GlobalInstanceDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

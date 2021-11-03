@@ -2,10 +2,12 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
+import "runtime"
 
 type ImportObject struct {
 	_inner     *C.WasmEdge_ImportObjectContext
 	_hostfuncs []uint
+	_own       bool
 }
 
 func NewImportObject(modname string) *ImportObject {
@@ -13,7 +15,9 @@ func NewImportObject(modname string) *ImportObject {
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj}
+	res := &ImportObject{_inner: obj, _own: true}
+	runtime.SetFinalizer(res, (*ImportObject).Release)
+	return res
 }
 
 func NewWasiImportObject(args []string, envs []string, dirs []string, preopens []string) *ImportObject {
@@ -51,7 +55,9 @@ func NewWasiImportObject(args []string, envs []string, dirs []string, preopens [
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj}
+	res := &ImportObject{_inner: obj, _own: true}
+	runtime.SetFinalizer(res, (*ImportObject).Release)
+	return res
 }
 
 func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, preopens []string) {
@@ -102,7 +108,9 @@ func NewWasmEdgeProcessImportObject(allowedcmds []string, allowall bool) *Import
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj}
+	res := &ImportObject{_inner: obj, _own: true}
+	runtime.SetFinalizer(res, (*ImportObject).Release)
+	return res
 }
 
 func (self *ImportObject) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
@@ -118,34 +126,43 @@ func (self *ImportObject) InitWasmEdgeProcess(allowedcmds []string, allowall boo
 }
 
 func (self *ImportObject) AddFunction(name string, inst *Function) {
-	hostfuncMgr.mu.Lock()
-	defer hostfuncMgr.mu.Unlock()
-
 	C.WasmEdge_ImportObjectAddFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
 	self._hostfuncs = append(self._hostfuncs, inst._index)
+	runtime.SetFinalizer(inst, nil)
 	inst._inner = nil
+	inst._own = false
 }
 
 func (self *ImportObject) AddTable(name string, inst *Table) {
 	C.WasmEdge_ImportObjectAddTable(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	runtime.SetFinalizer(inst, nil)
 	inst._inner = nil
+	inst._own = false
 }
 
 func (self *ImportObject) AddMemory(name string, inst *Memory) {
 	C.WasmEdge_ImportObjectAddMemory(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	runtime.SetFinalizer(inst, nil)
 	inst._inner = nil
+	inst._own = false
 }
 
 func (self *ImportObject) AddGlobal(name string, inst *Global) {
 	C.WasmEdge_ImportObjectAddGlobal(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	runtime.SetFinalizer(inst, nil)
 	inst._inner = nil
+	inst._own = false
 }
 
-func (self *ImportObject) Delete() {
-	for _, idx := range self._hostfuncs {
-		hostfuncMgr.del(idx)
+func (self *ImportObject) Release() {
+	if self._own {
+		for _, idx := range self._hostfuncs {
+			hostfuncMgr.del(idx)
+		}
+		self._hostfuncs = []uint{}
+		C.WasmEdge_ImportObjectDelete(self._inner)
 	}
-	self._hostfuncs = []uint{}
-	C.WasmEdge_ImportObjectDelete(self._inner)
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

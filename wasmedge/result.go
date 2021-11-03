@@ -17,9 +17,7 @@ func newError(res C.WasmEdge_Result) *Result {
 	if C.WasmEdge_ResultOK(res) {
 		return nil
 	}
-	return &Result{
-		code: uint8(res.Code),
-	}
+	return &Result{code: uint8(res.Code)}
 }
 
 func (res *Result) Error() string {

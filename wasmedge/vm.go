@@ -7,11 +7,13 @@ const char *_GoStringPtr(_GoString_ s);
 */
 import "C"
 import (
+	"runtime"
 	"unsafe"
 )
 
 type VM struct {
 	_inner *C.WasmEdge_VMContext
+	_own   bool
 }
 
 type bindgen int
@@ -28,7 +30,9 @@ func NewVM() *VM {
 	if vm == nil {
 		return nil
 	}
-	return &VM{_inner: vm}
+	res := &VM{_inner: vm, _own: true}
+	runtime.SetFinalizer(res, (*VM).Release)
+	return res
 }
 
 func NewVMWithConfig(conf *Configure) *VM {
@@ -36,7 +40,9 @@ func NewVMWithConfig(conf *Configure) *VM {
 	if vm == nil {
 		return nil
 	}
-	return &VM{_inner: vm}
+	res := &VM{_inner: vm, _own: true}
+	runtime.SetFinalizer(res, (*VM).Release)
+	return res
 }
 
 func NewVMWithStore(store *Store) *VM {
@@ -44,7 +50,9 @@ func NewVMWithStore(store *Store) *VM {
 	if vm == nil {
 		return nil
 	}
-	return &VM{_inner: vm}
+	res := &VM{_inner: vm, _own: true}
+	runtime.SetFinalizer(res, (*VM).Release)
+	return res
 }
 
 func NewVMWithConfigAndStore(conf *Configure, store *Store) *VM {
@@ -52,7 +60,9 @@ func NewVMWithConfigAndStore(conf *Configure, store *Store) *VM {
 	if vm == nil {
 		return nil
 	}
-	return &VM{_inner: vm}
+	res := &VM{_inner: vm, _own: true}
+	runtime.SetFinalizer(res, (*VM).Release)
+	return res
 }
 
 func (self *VM) RegisterWasmFile(modname string, path string) error {
@@ -317,26 +327,24 @@ func (self *VM) GetFunctionList() ([]string, []*FunctionType) {
 func (self *VM) GetImportObject(host HostRegistration) *ImportObject {
 	ptr := C.WasmEdge_VMGetImportModuleContext(self._inner, C.enum_WasmEdge_HostRegistration(host))
 	if ptr != nil {
-		return &ImportObject{
-			_inner: ptr,
-		}
+		return &ImportObject{_inner: ptr, _own: false}
 	}
 	return nil
 }
 
 func (self *VM) GetStore() *Store {
-	return &Store{
-		_inner: C.WasmEdge_VMGetStoreContext(self._inner),
-	}
+	return &Store{_inner: C.WasmEdge_VMGetStoreContext(self._inner), _own: false}
 }
 
 func (self *VM) GetStatistics() *Statistics {
-	return &Statistics{
-		_inner: C.WasmEdge_VMGetStatisticsContext(self._inner),
-	}
+	return &Statistics{_inner: C.WasmEdge_VMGetStatisticsContext(self._inner), _own: false}
 }
 
-func (self *VM) Delete() {
-	C.WasmEdge_VMDelete(self._inner)
+func (self *VM) Release() {
+	if self._own {
+		C.WasmEdge_VMDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

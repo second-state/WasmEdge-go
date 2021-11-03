@@ -2,6 +2,7 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
+import "runtime"
 
 type ExternType C.enum_WasmEdge_ExternalType
 
@@ -14,32 +15,39 @@ const (
 
 type AST struct {
 	_inner *C.WasmEdge_ASTModuleContext
+	_own   bool
 }
 
 type FunctionType struct {
 	_inner *C.WasmEdge_FunctionTypeContext
+	_own   bool
 }
 
 type TableType struct {
 	_inner *C.WasmEdge_TableTypeContext
+	_own   bool
 }
 
 type MemoryType struct {
 	_inner *C.WasmEdge_MemoryTypeContext
+	_own   bool
 }
 
 type GlobalType struct {
 	_inner *C.WasmEdge_GlobalTypeContext
+	_own   bool
 }
 
 type ImportType struct {
 	_inner *C.WasmEdge_ImportTypeContext
 	_ast   *C.WasmEdge_ASTModuleContext
+	_own   bool
 }
 
 type ExportType struct {
 	_inner *C.WasmEdge_ExportTypeContext
 	_ast   *C.WasmEdge_ASTModuleContext
+	_own   bool
 }
 
 func (self *AST) ListImports() []*ImportType {
@@ -55,6 +63,7 @@ func (self *AST) ListImports() []*ImportType {
 		for i, val := range cimptype {
 			imptype[i]._inner = val
 			imptype[i]._ast = self._inner
+			imptype[i]._own = false
 		}
 		return imptype
 	}
@@ -74,15 +83,20 @@ func (self *AST) ListExports() []*ExportType {
 		for i, val := range cexptype {
 			exptype[i]._inner = val
 			exptype[i]._ast = self._inner
+			exptype[i]._own = false
 		}
 		return exptype
 	}
 	return nil
 }
 
-func (self *AST) Delete() {
-	C.WasmEdge_ASTModuleDelete(self._inner)
+func (self *AST) Release() {
+	if self._own {
+		C.WasmEdge_ASTModuleDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewFunctionType(params []ValType, returns []ValType) *FunctionType {
@@ -108,7 +122,9 @@ func NewFunctionType(params []ValType, returns []ValType) *FunctionType {
 	if ftype == nil {
 		return nil
 	}
-	return &FunctionType{_inner: ftype}
+	res := &FunctionType{_inner: ftype, _own: true}
+	runtime.SetFinalizer(res, (*FunctionType).Release)
+	return res
 }
 
 func (self *FunctionType) GetParametersLength() uint {
@@ -155,18 +171,25 @@ func (self *FunctionType) GetReturns() []ValType {
 	return nil
 }
 
-func (self *FunctionType) Delete() {
-	C.WasmEdge_FunctionTypeDelete(self._inner)
+func (self *FunctionType) Release() {
+	if self._own {
+		C.WasmEdge_FunctionTypeDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewTableType(rtype RefType, lim *Limit) *TableType {
 	crtype := C.enum_WasmEdge_RefType(rtype)
 	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
-	self := &TableType{
-		_inner: C.WasmEdge_TableTypeCreate(crtype, climit),
+	ttype := C.WasmEdge_TableTypeCreate(crtype, climit)
+	if ttype == nil {
+		return nil
 	}
-	return self
+	res := &TableType{_inner: ttype, _own: true}
+	runtime.SetFinalizer(res, (*TableType).Release)
+	return res
 }
 
 func (self *TableType) GetRefType() RefType {
@@ -185,17 +208,24 @@ func (self *TableType) GetLimit() *Limit {
 	return nil
 }
 
-func (self *TableType) Delete() {
-	C.WasmEdge_TableTypeDelete(self._inner)
+func (self *TableType) Release() {
+	if self._own {
+		C.WasmEdge_TableTypeDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewMemoryType(lim *Limit) *MemoryType {
 	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
-	self := &MemoryType{
-		_inner: C.WasmEdge_MemoryTypeCreate(climit),
+	mtype := C.WasmEdge_MemoryTypeCreate(climit)
+	if mtype == nil {
+		return nil
 	}
-	return self
+	res := &MemoryType{_inner: mtype, _own: true}
+	runtime.SetFinalizer(res, (*MemoryType).Release)
+	return res
 }
 
 func (self *MemoryType) GetLimit() *Limit {
@@ -210,18 +240,25 @@ func (self *MemoryType) GetLimit() *Limit {
 	return nil
 }
 
-func (self *MemoryType) Delete() {
-	C.WasmEdge_MemoryTypeDelete(self._inner)
+func (self *MemoryType) Release() {
+	if self._own {
+		C.WasmEdge_MemoryTypeDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func NewGlobalType(vtype ValType, vmut ValMut) *GlobalType {
 	cvtype := C.enum_WasmEdge_ValType(vtype)
 	cvmut := C.enum_WasmEdge_Mutability(vmut)
-	self := &GlobalType{
-		_inner: C.WasmEdge_GlobalTypeCreate(cvtype, cvmut),
+	gtype := C.WasmEdge_GlobalTypeCreate(cvtype, cvmut)
+	if gtype == nil {
+		return nil
 	}
-	return self
+	res := &GlobalType{_inner: gtype, _own: true}
+	runtime.SetFinalizer(res, (*GlobalType).Release)
+	return res
 }
 
 func (self *GlobalType) GetValType() ValType {
@@ -232,9 +269,13 @@ func (self *GlobalType) GetMutability() ValMut {
 	return ValMut(C.WasmEdge_GlobalTypeGetMutability(self._inner))
 }
 
-func (self *GlobalType) Delete() {
-	C.WasmEdge_GlobalTypeDelete(self._inner)
+func (self *GlobalType) Release() {
+	if self._own {
+		C.WasmEdge_GlobalTypeDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
 
 func (self *ImportType) GetExternalType() ExternType {
@@ -257,18 +298,22 @@ func (self *ImportType) GetExternalValue() interface{} {
 	case ExternType_Function:
 		return &FunctionType{
 			_inner: C.WasmEdge_ImportTypeGetFunctionType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Table:
 		return &TableType{
 			_inner: C.WasmEdge_ImportTypeGetTableType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Memory:
 		return &MemoryType{
 			_inner: C.WasmEdge_ImportTypeGetMemoryType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Global:
 		return &GlobalType{
 			_inner: C.WasmEdge_ImportTypeGetGlobalType(self._ast, self._inner),
+			_own:   false,
 		}
 	}
 	panic("Unknown external type")
@@ -290,18 +335,22 @@ func (self *ExportType) GetExternalValue() interface{} {
 	case ExternType_Function:
 		return &FunctionType{
 			_inner: C.WasmEdge_ExportTypeGetFunctionType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Table:
 		return &TableType{
 			_inner: C.WasmEdge_ExportTypeGetTableType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Memory:
 		return &MemoryType{
 			_inner: C.WasmEdge_ExportTypeGetMemoryType(self._ast, self._inner),
+			_own:   false,
 		}
 	case ExternType_Global:
 		return &GlobalType{
 			_inner: C.WasmEdge_ExportTypeGetGlobalType(self._ast, self._inner),
+			_own:   false,
 		}
 	}
 	panic("Unknown external type")

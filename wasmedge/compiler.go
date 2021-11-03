@@ -2,10 +2,14 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Compiler struct {
 	_inner *C.WasmEdge_CompilerContext
+	_own   bool
 }
 
 func NewCompiler() *Compiler {
@@ -13,7 +17,9 @@ func NewCompiler() *Compiler {
 	if compiler == nil {
 		return nil
 	}
-	return &Compiler{_inner: compiler}
+	res := &Compiler{_inner: compiler, _own: true}
+	runtime.SetFinalizer(res, (*Compiler).Release)
+	return res
 }
 
 func NewCompilerWithConfig(conf *Configure) *Compiler {
@@ -21,7 +27,9 @@ func NewCompilerWithConfig(conf *Configure) *Compiler {
 	if compiler == nil {
 		return nil
 	}
-	return &Compiler{_inner: compiler}
+	res := &Compiler{_inner: compiler, _own: true}
+	runtime.SetFinalizer(res, (*Compiler).Release)
+	return res
 }
 
 func (self *Compiler) Compile(inpath string, outpath string) error {
@@ -36,7 +44,11 @@ func (self *Compiler) Compile(inpath string, outpath string) error {
 	return nil
 }
 
-func (self *Compiler) Delete() {
-	C.WasmEdge_CompilerDelete(self._inner)
+func (self *Compiler) Release() {
+	if self._own {
+		C.WasmEdge_CompilerDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
