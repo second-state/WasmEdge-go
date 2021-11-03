@@ -20,9 +20,11 @@ package wasmedge
 //   return f(Cxt, ModName, Names, Len);
 // }
 import "C"
+import "runtime"
 
 type Store struct {
 	_inner *C.WasmEdge_StoreContext
+	_own   bool
 }
 
 func (self *Store) getExports(exportlen C.uint32_t, getfunc interface{}, modname string) []string {
@@ -48,7 +50,9 @@ func NewStore() *Store {
 	if store == nil {
 		return nil
 	}
-	return &Store{_inner: store}
+	res := &Store{_inner: store, _own: true}
+	runtime.SetFinalizer(res, (*Store).Release)
+	return res
 }
 
 func (self *Store) FindFunction(name string) *Function {
@@ -57,7 +61,7 @@ func (self *Store) FindFunction(name string) *Function {
 	if cinst == nil {
 		return nil
 	}
-	return &Function{_inner: cinst}
+	return &Function{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindFunctionRegistered(modulename string, name string) *Function {
@@ -67,7 +71,7 @@ func (self *Store) FindFunctionRegistered(modulename string, name string) *Funct
 	if cinst == nil {
 		return nil
 	}
-	return &Function{_inner: cinst}
+	return &Function{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindTable(name string) *Table {
@@ -76,7 +80,7 @@ func (self *Store) FindTable(name string) *Table {
 	if cinst == nil {
 		return nil
 	}
-	return &Table{_inner: cinst}
+	return &Table{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindTableRegistered(modulename string, name string) *Table {
@@ -86,7 +90,7 @@ func (self *Store) FindTableRegistered(modulename string, name string) *Table {
 	if cinst == nil {
 		return nil
 	}
-	return &Table{_inner: cinst}
+	return &Table{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindMemory(name string) *Memory {
@@ -95,7 +99,7 @@ func (self *Store) FindMemory(name string) *Memory {
 	if cinst == nil {
 		return nil
 	}
-	return &Memory{_inner: cinst}
+	return &Memory{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindMemoryRegistered(modulename string, name string) *Memory {
@@ -105,7 +109,7 @@ func (self *Store) FindMemoryRegistered(modulename string, name string) *Memory 
 	if cinst == nil {
 		return nil
 	}
-	return &Memory{_inner: cinst}
+	return &Memory{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindGlobal(name string) *Global {
@@ -114,7 +118,7 @@ func (self *Store) FindGlobal(name string) *Global {
 	if cinst == nil {
 		return nil
 	}
-	return &Global{_inner: cinst}
+	return &Global{_inner: cinst, _own: false}
 }
 
 func (self *Store) FindGlobalRegistered(modulename string, name string) *Global {
@@ -124,7 +128,7 @@ func (self *Store) FindGlobalRegistered(modulename string, name string) *Global 
 	if cinst == nil {
 		return nil
 	}
-	return &Global{_inner: cinst}
+	return &Global{_inner: cinst, _own: false}
 }
 
 func (self *Store) ListFunction() []string {
@@ -200,7 +204,11 @@ func (self *Store) ListModule() []string {
 	return names
 }
 
-func (self *Store) Delete() {
-	C.WasmEdge_StoreDelete(self._inner)
+func (self *Store) Release() {
+	if self._own {
+		C.WasmEdge_StoreDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

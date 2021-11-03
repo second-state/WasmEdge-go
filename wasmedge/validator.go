@@ -2,9 +2,11 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
+import "runtime"
 
 type Validator struct {
 	_inner *C.WasmEdge_ValidatorContext
+	_own   bool
 }
 
 func NewValidator() *Validator {
@@ -12,7 +14,9 @@ func NewValidator() *Validator {
 	if validator == nil {
 		return nil
 	}
-	return &Validator{_inner: validator}
+	res := &Validator{_inner: validator, _own: true}
+	runtime.SetFinalizer(res, (*Validator).Release)
+	return res
 }
 
 func NewValidatorWithConfig(conf *Configure) *Validator {
@@ -20,7 +24,9 @@ func NewValidatorWithConfig(conf *Configure) *Validator {
 	if validator == nil {
 		return nil
 	}
-	return &Validator{_inner: validator}
+	res := &Validator{_inner: validator, _own: true}
+	runtime.SetFinalizer(res, (*Validator).Release)
+	return res
 }
 
 func (self *Validator) Validate(ast *AST) error {
@@ -31,7 +37,11 @@ func (self *Validator) Validate(ast *AST) error {
 	return nil
 }
 
-func (self *Validator) Delete() {
-	C.WasmEdge_ValidatorDelete(self._inner)
+func (self *Validator) Release() {
+	if self._own {
+		C.WasmEdge_ValidatorDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

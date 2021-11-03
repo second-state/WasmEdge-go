@@ -2,10 +2,14 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Executor struct {
 	_inner *C.WasmEdge_ExecutorContext
+	_own   bool
 }
 
 func NewExecutor() *Executor {
@@ -13,7 +17,9 @@ func NewExecutor() *Executor {
 	if executor == nil {
 		return nil
 	}
-	return &Executor{_inner: executor}
+	res := &Executor{_inner: executor, _own: true}
+	runtime.SetFinalizer(res, (*Executor).Release)
+	return res
 }
 
 func NewExecutorWithConfig(conf *Configure) *Executor {
@@ -21,7 +27,9 @@ func NewExecutorWithConfig(conf *Configure) *Executor {
 	if executor == nil {
 		return nil
 	}
-	return &Executor{_inner: executor}
+	res := &Executor{_inner: executor, _own: true}
+	runtime.SetFinalizer(res, (*Executor).Release)
+	return res
 }
 
 func NewExecutorWithStatistics(stat *Statistics) *Executor {
@@ -29,7 +37,9 @@ func NewExecutorWithStatistics(stat *Statistics) *Executor {
 	if executor == nil {
 		return nil
 	}
-	return &Executor{_inner: executor}
+	res := &Executor{_inner: executor, _own: true}
+	runtime.SetFinalizer(res, (*Executor).Release)
+	return res
 }
 
 func NewExecutorWithConfigAndStatistics(conf *Configure, stat *Statistics) *Executor {
@@ -37,7 +47,9 @@ func NewExecutorWithConfigAndStatistics(conf *Configure, stat *Statistics) *Exec
 	if executor == nil {
 		return nil
 	}
-	return &Executor{_inner: executor}
+	res := &Executor{_inner: executor, _own: true}
+	runtime.SetFinalizer(res, (*Executor).Release)
+	return res
 }
 
 func (self *Executor) Instantiate(store *Store, ast *AST) error {
@@ -114,7 +126,11 @@ func (self *Executor) InvokeRegistered(store *Store, modname string, funcname st
 	return fromWasmEdgeValueSlide(creturns), nil
 }
 
-func (self *Executor) Delete() {
-	C.WasmEdge_ExecutorDelete(self._inner)
+func (self *Executor) Release() {
+	if self._own {
+		C.WasmEdge_ExecutorDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

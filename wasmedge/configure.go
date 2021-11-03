@@ -2,6 +2,7 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
+import "runtime"
 
 type Proposal C.enum_WasmEdge_Proposal
 
@@ -43,29 +44,29 @@ const (
 
 type Configure struct {
 	_inner *C.WasmEdge_ConfigureContext
+	_own   bool
 }
 
 func NewConfigure(params ...interface{}) *Configure {
-	self := &Configure{
-		_inner: C.WasmEdge_ConfigureCreate(),
-	}
-
-	if self._inner == nil {
+	conf := C.WasmEdge_ConfigureCreate()
+	if conf == nil {
 		return nil
 	}
 
-	for _, conf := range params {
-		switch conf.(type) {
+	for _, val := range params {
+		switch val.(type) {
 		case Proposal:
-			C.WasmEdge_ConfigureAddProposal(self._inner, C.enum_WasmEdge_Proposal(conf.(Proposal)))
+			C.WasmEdge_ConfigureAddProposal(conf, C.enum_WasmEdge_Proposal(val.(Proposal)))
 		case HostRegistration:
-			C.WasmEdge_ConfigureAddHostRegistration(self._inner, C.enum_WasmEdge_HostRegistration(conf.(HostRegistration)))
+			C.WasmEdge_ConfigureAddHostRegistration(conf, C.enum_WasmEdge_HostRegistration(val.(HostRegistration)))
 		default:
 			panic("Wrong argument of NewConfigure()")
 		}
 	}
 
-	return self
+	res := &Configure{_inner: conf, _own: true}
+	runtime.SetFinalizer(res, (*Configure).Release)
+	return res
 }
 
 func (self *Configure) HasConfig(conf interface{}) bool {
@@ -117,23 +118,35 @@ func (self *Configure) IsCompilerDumpIR() bool {
 	return bool(C.WasmEdge_ConfigureCompilerIsDumpIR(self._inner))
 }
 
-func (self *Configure) SetCompilerInstructionCounting(iscount bool) {
-	C.WasmEdge_ConfigureCompilerSetInstructionCounting(self._inner, C.bool(iscount))
+func (self *Configure) SetStatisticsInstructionCounting(iscount bool) {
+	C.WasmEdge_ConfigureStatisticsSetInstructionCounting(self._inner, C.bool(iscount))
 }
 
-func (self *Configure) IsCompilerInstructionCounting() bool {
-	return bool(C.WasmEdge_ConfigureCompilerIsInstructionCounting(self._inner))
+func (self *Configure) IsStatisticsInstructionCounting() bool {
+	return bool(C.WasmEdge_ConfigureStatisticsIsInstructionCounting(self._inner))
 }
 
-func (self *Configure) SetCompilerCostMeasuring(ismeasure bool) {
-	C.WasmEdge_ConfigureCompilerSetCostMeasuring(self._inner, C.bool(ismeasure))
+func (self *Configure) SetStatisticsTimeMeasuring(ismeasure bool) {
+	C.WasmEdge_ConfigureStatisticsSetTimeMeasuring(self._inner, C.bool(ismeasure))
 }
 
-func (self *Configure) IsCompilerCostMeasuring() bool {
-	return bool(C.WasmEdge_ConfigureCompilerIsCostMeasuring(self._inner))
+func (self *Configure) IsStatisticsTimeMeasuring() bool {
+	return bool(C.WasmEdge_ConfigureStatisticsIsTimeMeasuring(self._inner))
 }
 
-func (self *Configure) Delete() {
-	C.WasmEdge_ConfigureDelete(self._inner)
+func (self *Configure) SetStatisticsCostMeasuring(ismeasure bool) {
+	C.WasmEdge_ConfigureStatisticsSetCostMeasuring(self._inner, C.bool(ismeasure))
+}
+
+func (self *Configure) IsStatisticsCostMeasuring() bool {
+	return bool(C.WasmEdge_ConfigureStatisticsIsCostMeasuring(self._inner))
+}
+
+func (self *Configure) Release() {
+	if self._own {
+		C.WasmEdge_ConfigureDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }

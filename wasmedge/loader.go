@@ -2,10 +2,14 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Loader struct {
 	_inner *C.WasmEdge_LoaderContext
+	_own   bool
 }
 
 func NewLoader() *Loader {
@@ -13,7 +17,9 @@ func NewLoader() *Loader {
 	if loader == nil {
 		return nil
 	}
-	return &Loader{_inner: loader}
+	res := &Loader{_inner: loader, _own: true}
+	runtime.SetFinalizer(res, (*Loader).Release)
+	return res
 }
 
 func NewLoaderWithConfig(conf *Configure) *Loader {
@@ -21,30 +27,40 @@ func NewLoaderWithConfig(conf *Configure) *Loader {
 	if loader == nil {
 		return nil
 	}
-	return &Loader{_inner: loader}
+	res := &Loader{_inner: loader, _own: true}
+	runtime.SetFinalizer(res, (*Loader).Release)
+	return res
 }
 
 func (self *Loader) LoadFile(path string) (*AST, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	var module *C.WasmEdge_ASTModuleContext = nil
-	res := C.WasmEdge_LoaderParseFromFile(self._inner, &module, cpath)
-	if !C.WasmEdge_ResultOK(res) {
-		return nil, newError(res)
+	result := C.WasmEdge_LoaderParseFromFile(self._inner, &module, cpath)
+	if !C.WasmEdge_ResultOK(result) {
+		return nil, newError(result)
 	}
-	return &AST{_inner: module}, nil
+	res := &AST{_inner: module, _own: true}
+	runtime.SetFinalizer(res, (*AST).Release)
+	return res, nil
 }
 
 func (self *Loader) LoadBuffer(buf []byte) (*AST, error) {
 	var module *C.WasmEdge_ASTModuleContext = nil
-	res := C.WasmEdge_LoaderParseFromBuffer(self._inner, &module, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
-	if !C.WasmEdge_ResultOK(res) {
-		return nil, newError(res)
+	result := C.WasmEdge_LoaderParseFromBuffer(self._inner, &module, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	if !C.WasmEdge_ResultOK(result) {
+		return nil, newError(result)
 	}
-	return &AST{_inner: module}, nil
+	res := &AST{_inner: module, _own: true}
+	runtime.SetFinalizer(res, (*AST).Release)
+	return res, nil
 }
 
-func (self *Loader) Delete() {
-	C.WasmEdge_LoaderDelete(self._inner)
+func (self *Loader) Release() {
+	if self._own {
+		C.WasmEdge_LoaderDelete(self._inner)
+	}
+	runtime.SetFinalizer(self, nil)
 	self._inner = nil
+	self._own = false
 }
