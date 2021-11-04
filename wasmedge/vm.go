@@ -185,6 +185,10 @@ func (self *VM) Instantiate() error {
 func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, error) {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
+	if ftype == nil {
+		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	}
 	cparams := toWasmEdgeValueSlide(params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
@@ -209,6 +213,10 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...interface{}) (interface{}, error) {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
+	if ftype == nil {
+		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	}
 	cparams := toWasmEdgeValueSlideBindgen(self, rettype, nil, params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
@@ -233,6 +241,10 @@ func (self *VM) ExecuteRegistered(modname string, funcname string, params ...int
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionTypeRegistered(modname, funcname)
+	if ftype == nil {
+		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	}
 	cparams := toWasmEdgeValueSlide(params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
@@ -258,6 +270,10 @@ func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettyp
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	ftype := self.GetFunctionType(funcname)
+	if ftype == nil {
+		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	}
 	cparams := toWasmEdgeValueSlideBindgen(self, rettype, &modname, params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
@@ -282,26 +298,20 @@ func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettyp
 func (self *VM) GetFunctionType(funcname string) *FunctionType {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	cftype := C.WasmEdge_VMGetFunctionType(self._inner, funcstr)
-	if cftype != nil {
-		ftype := &FunctionType{
-			_inner: cftype,
-		}
-		return ftype
+	if cftype == nil {
+		return nil
 	}
-	return nil
+	return &FunctionType{_inner: cftype, _own: false}
 }
 
 func (self *VM) GetFunctionTypeRegistered(modname string, funcname string) *FunctionType {
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	cftype := C.WasmEdge_VMGetFunctionTypeRegistered(self._inner, modstr, funcstr)
-	if cftype != nil {
-		ftype := &FunctionType{
-			_inner: cftype,
-		}
-		return ftype
+	if cftype == nil {
+		return nil
 	}
-	return nil
+	return &FunctionType{_inner: cftype, _own: false}
 }
 
 func (self *VM) Cleanup() {

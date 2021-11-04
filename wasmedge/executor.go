@@ -80,7 +80,13 @@ func (self *Executor) RegisterModule(store *Store, ast *AST, modname string) err
 func (self *Executor) Invoke(store *Store, funcname string, params ...interface{}) ([]interface{}, error) {
 	funcstr := toWasmEdgeStringWrap(funcname)
 	funccxt := store.FindFunction(funcname)
-	ftype := funccxt.GetFunctionType()
+	var ftype *FunctionType
+	if funccxt == nil {
+		// If find function failed, set function type as NULL and keep running to let the Executor to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	} else {
+		ftype = funccxt.GetFunctionType()
+	}
 	cparams := toWasmEdgeValueSlide(params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
@@ -105,7 +111,13 @@ func (self *Executor) InvokeRegistered(store *Store, modname string, funcname st
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
 	funccxt := store.FindFunctionRegistered(modname, funcname)
-	ftype := funccxt.GetFunctionType()
+	var ftype *FunctionType
+	if funccxt == nil {
+		// If find function failed, set function type as NULL and keep running to let the Executor to handle the error.
+		ftype = &FunctionType{_inner: nil, _own: false}
+	} else {
+		ftype = funccxt.GetFunctionType()
+	}
 	cparams := toWasmEdgeValueSlide(params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
 	var ptrparams *C.WasmEdge_Value = nil
