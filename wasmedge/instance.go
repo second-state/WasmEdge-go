@@ -13,6 +13,8 @@ WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
 */
 import "C"
 import (
+	"errors"
+	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -160,17 +162,17 @@ func (self *Memory) GetMemoryType() *MemoryType {
 }
 
 func (self *Memory) GetData(off uint, length uint) ([]byte, error) {
-	data := make([]byte, length)
-	var ptrdata *C.uint8_t = nil
-	if len(data) > 0 {
-		ptrdata = (*C.uint8_t)(unsafe.Pointer(&data[0]))
+	p := C.WasmEdge_MemoryInstanceGetPointer(self._inner, C.uint32_t(off), C.uint32_t(length))
+	if p == nil {
+		return nil, errors.New("Failed get data pointer")
 	}
-	res := C.WasmEdge_MemoryInstanceGetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length))
-	if !C.WasmEdge_ResultOK(res) {
-		return nil, newError(res)
-	}
-
-	return data, nil
+	// Use SliceHeader to wrap the slice from cgo
+	var r []byte
+	s := (*reflect.SliceHeader)(unsafe.Pointer(&r))
+	s.Cap = int(length)
+	s.Len = int(length)
+	s.Data = uintptr(unsafe.Pointer(p))
+	return r, nil
 }
 
 func (self *Memory) SetData(data []byte, off uint, length uint) error {
