@@ -7,15 +7,19 @@ import "runtime"
 type Proposal C.enum_WasmEdge_Proposal
 
 const (
-	ANNOTATIONS            = Proposal(C.WasmEdge_Proposal_Annotations)
-	BULK_MEMORY_OPERATIONS = Proposal(C.WasmEdge_Proposal_BulkMemoryOperations)
-	EXCEPTION_HANDLING     = Proposal(C.WasmEdge_Proposal_ExceptionHandling)
-	FUNCTION_REFERENCES    = Proposal(C.WasmEdge_Proposal_FunctionReferences)
-	MEMORY64               = Proposal(C.WasmEdge_Proposal_Memory64)
-	REFERENCE_TYPES        = Proposal(C.WasmEdge_Proposal_ReferenceTypes)
-	SIMD                   = Proposal(C.WasmEdge_Proposal_SIMD)
-	TAIL_CALL              = Proposal(C.WasmEdge_Proposal_TailCall)
-	THREADS                = Proposal(C.WasmEdge_Proposal_Threads)
+	IMPORT_EXPORT_MUT_GLOBALS         = Proposal(C.WasmEdge_Proposal_ImportExportMutGlobals)
+	NON_TRAP_FLOAT_TO_INT_CONVERSIONS = Proposal(C.WasmEdge_Proposal_NonTrapFloatToIntConversions)
+	SIGN_EXTENSION_OPERATORS          = Proposal(C.WasmEdge_Proposal_SignExtensionOperators)
+	MULTI_VALUE                       = Proposal(C.WasmEdge_Proposal_MultiValue)
+	BULK_MEMORY_OPERATIONS            = Proposal(C.WasmEdge_Proposal_BulkMemoryOperations)
+	REFERENCE_TYPES                   = Proposal(C.WasmEdge_Proposal_ReferenceTypes)
+	SIMD                              = Proposal(C.WasmEdge_Proposal_SIMD)
+	TAIL_CALL                         = Proposal(C.WasmEdge_Proposal_TailCall)
+	ANNOTATIONS                       = Proposal(C.WasmEdge_Proposal_Annotations)
+	MEMORY64                          = Proposal(C.WasmEdge_Proposal_Memory64)
+	THREADS                           = Proposal(C.WasmEdge_Proposal_Threads)
+	EXCEPTION_HANDLING                = Proposal(C.WasmEdge_Proposal_ExceptionHandling)
+	FUNCTION_REFERENCES               = Proposal(C.WasmEdge_Proposal_FunctionReferences)
 )
 
 type HostRegistration C.enum_WasmEdge_HostRegistration
