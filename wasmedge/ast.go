@@ -2,7 +2,6 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "runtime"
 
 type ExternType C.enum_WasmEdge_ExternalType
 
@@ -94,7 +93,6 @@ func (self *AST) Release() {
 	if self._own {
 		C.WasmEdge_ASTModuleDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -122,9 +120,7 @@ func NewFunctionType(params []ValType, returns []ValType) *FunctionType {
 	if ftype == nil {
 		return nil
 	}
-	res := &FunctionType{_inner: ftype, _own: true}
-	runtime.SetFinalizer(res, (*FunctionType).Release)
-	return res
+	return &FunctionType{_inner: ftype, _own: true}
 }
 
 func (self *FunctionType) GetParametersLength() uint {
@@ -175,7 +171,6 @@ func (self *FunctionType) Release() {
 	if self._own {
 		C.WasmEdge_FunctionTypeDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -187,9 +182,7 @@ func NewTableType(rtype RefType, lim *Limit) *TableType {
 	if ttype == nil {
 		return nil
 	}
-	res := &TableType{_inner: ttype, _own: true}
-	runtime.SetFinalizer(res, (*TableType).Release)
-	return res
+	return &TableType{_inner: ttype, _own: true}
 }
 
 func (self *TableType) GetRefType() RefType {
@@ -212,7 +205,6 @@ func (self *TableType) Release() {
 	if self._own {
 		C.WasmEdge_TableTypeDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -223,9 +215,7 @@ func NewMemoryType(lim *Limit) *MemoryType {
 	if mtype == nil {
 		return nil
 	}
-	res := &MemoryType{_inner: mtype, _own: true}
-	runtime.SetFinalizer(res, (*MemoryType).Release)
-	return res
+	return &MemoryType{_inner: mtype, _own: true}
 }
 
 func (self *MemoryType) GetLimit() *Limit {
@@ -244,7 +234,6 @@ func (self *MemoryType) Release() {
 	if self._own {
 		C.WasmEdge_MemoryTypeDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -256,9 +245,7 @@ func NewGlobalType(vtype ValType, vmut ValMut) *GlobalType {
 	if gtype == nil {
 		return nil
 	}
-	res := &GlobalType{_inner: gtype, _own: true}
-	runtime.SetFinalizer(res, (*GlobalType).Release)
-	return res
+	return &GlobalType{_inner: gtype, _own: true}
 }
 
 func (self *GlobalType) GetValType() ValType {
@@ -273,7 +260,6 @@ func (self *GlobalType) Release() {
 	if self._own {
 		C.WasmEdge_GlobalTypeDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

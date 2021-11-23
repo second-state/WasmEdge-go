@@ -3,7 +3,6 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 import (
-	"runtime"
 	"unsafe"
 )
 
@@ -17,9 +16,7 @@ func NewCompiler() *Compiler {
 	if compiler == nil {
 		return nil
 	}
-	res := &Compiler{_inner: compiler, _own: true}
-	runtime.SetFinalizer(res, (*Compiler).Release)
-	return res
+	return &Compiler{_inner: compiler, _own: true}
 }
 
 func NewCompilerWithConfig(conf *Configure) *Compiler {
@@ -27,9 +24,7 @@ func NewCompilerWithConfig(conf *Configure) *Compiler {
 	if compiler == nil {
 		return nil
 	}
-	res := &Compiler{_inner: compiler, _own: true}
-	runtime.SetFinalizer(res, (*Compiler).Release)
-	return res
+	return &Compiler{_inner: compiler, _own: true}
 }
 
 func (self *Compiler) Compile(inpath string, outpath string) error {
@@ -48,7 +43,6 @@ func (self *Compiler) Release() {
 	if self._own {
 		C.WasmEdge_CompilerDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

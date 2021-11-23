@@ -3,7 +3,6 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 import (
-	"runtime"
 	"unsafe"
 )
 
@@ -17,9 +16,7 @@ func NewLoader() *Loader {
 	if loader == nil {
 		return nil
 	}
-	res := &Loader{_inner: loader, _own: true}
-	runtime.SetFinalizer(res, (*Loader).Release)
-	return res
+	return &Loader{_inner: loader, _own: true}
 }
 
 func NewLoaderWithConfig(conf *Configure) *Loader {
@@ -27,9 +24,7 @@ func NewLoaderWithConfig(conf *Configure) *Loader {
 	if loader == nil {
 		return nil
 	}
-	res := &Loader{_inner: loader, _own: true}
-	runtime.SetFinalizer(res, (*Loader).Release)
-	return res
+	return &Loader{_inner: loader, _own: true}
 }
 
 func (self *Loader) LoadFile(path string) (*AST, error) {
@@ -40,9 +35,7 @@ func (self *Loader) LoadFile(path string) (*AST, error) {
 	if !C.WasmEdge_ResultOK(result) {
 		return nil, newError(result)
 	}
-	res := &AST{_inner: module, _own: true}
-	runtime.SetFinalizer(res, (*AST).Release)
-	return res, nil
+	return &AST{_inner: module, _own: true}, nil
 }
 
 func (self *Loader) LoadBuffer(buf []byte) (*AST, error) {
@@ -51,16 +44,13 @@ func (self *Loader) LoadBuffer(buf []byte) (*AST, error) {
 	if !C.WasmEdge_ResultOK(result) {
 		return nil, newError(result)
 	}
-	res := &AST{_inner: module, _own: true}
-	runtime.SetFinalizer(res, (*AST).Release)
-	return res, nil
+	return &AST{_inner: module, _own: true}, nil
 }
 
 func (self *Loader) Release() {
 	if self._own {
 		C.WasmEdge_LoaderDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

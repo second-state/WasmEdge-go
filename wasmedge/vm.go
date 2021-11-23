@@ -7,7 +7,6 @@ const char *_GoStringPtr(_GoString_ s);
 */
 import "C"
 import (
-	"runtime"
 	"unsafe"
 )
 
@@ -30,9 +29,7 @@ func NewVM() *VM {
 	if vm == nil {
 		return nil
 	}
-	res := &VM{_inner: vm, _own: true}
-	runtime.SetFinalizer(res, (*VM).Release)
-	return res
+	return &VM{_inner: vm, _own: true}
 }
 
 func NewVMWithConfig(conf *Configure) *VM {
@@ -40,9 +37,7 @@ func NewVMWithConfig(conf *Configure) *VM {
 	if vm == nil {
 		return nil
 	}
-	res := &VM{_inner: vm, _own: true}
-	runtime.SetFinalizer(res, (*VM).Release)
-	return res
+	return &VM{_inner: vm, _own: true}
 }
 
 func NewVMWithStore(store *Store) *VM {
@@ -50,9 +45,7 @@ func NewVMWithStore(store *Store) *VM {
 	if vm == nil {
 		return nil
 	}
-	res := &VM{_inner: vm, _own: true}
-	runtime.SetFinalizer(res, (*VM).Release)
-	return res
+	return &VM{_inner: vm, _own: true}
 }
 
 func NewVMWithConfigAndStore(conf *Configure, store *Store) *VM {
@@ -60,9 +53,7 @@ func NewVMWithConfigAndStore(conf *Configure, store *Store) *VM {
 	if vm == nil {
 		return nil
 	}
-	res := &VM{_inner: vm, _own: true}
-	runtime.SetFinalizer(res, (*VM).Release)
-	return res
+	return &VM{_inner: vm, _own: true}
 }
 
 func (self *VM) RegisterWasmFile(modname string, path string) error {
@@ -354,7 +345,6 @@ func (self *VM) Release() {
 	if self._own {
 		C.WasmEdge_VMDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

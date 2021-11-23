@@ -20,7 +20,6 @@ package wasmedge
 //   return f(Cxt, ModName, Names, Len);
 // }
 import "C"
-import "runtime"
 
 type Store struct {
 	_inner *C.WasmEdge_StoreContext
@@ -50,9 +49,7 @@ func NewStore() *Store {
 	if store == nil {
 		return nil
 	}
-	res := &Store{_inner: store, _own: true}
-	runtime.SetFinalizer(res, (*Store).Release)
-	return res
+	return &Store{_inner: store, _own: true}
 }
 
 func (self *Store) FindFunction(name string) *Function {
@@ -208,7 +205,6 @@ func (self *Store) Release() {
 	if self._own {
 		C.WasmEdge_StoreDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

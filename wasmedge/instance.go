@@ -15,7 +15,6 @@ import "C"
 import (
 	"errors"
 	"reflect"
-	"runtime"
 	"unsafe"
 )
 
@@ -56,13 +55,7 @@ func NewFunction(ftype *FunctionType, fn hostFunctionSignature, additional inter
 		hostfuncMgr.del(index)
 		return nil
 	}
-	res := &Function{
-		_inner: function,
-		_index: index,
-		_own:   true,
-	}
-	runtime.SetFinalizer(res, (*Function).Release)
-	return res
+	return &Function{_inner: function, _index: index, _own: true}
 }
 
 func (self *Function) GetFunctionType() *FunctionType {
@@ -77,7 +70,6 @@ func (self *Function) Release() {
 		C.WasmEdge_FunctionInstanceDelete(self._inner)
 		hostfuncMgr.del(self._index)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -90,9 +82,7 @@ func NewTable(ttype *TableType) *Table {
 	if table == nil {
 		return nil
 	}
-	res := &Table{_inner: table, _own: true}
-	runtime.SetFinalizer(res, (*Table).Release)
-	return res
+	return &Table{_inner: table, _own: true}
 }
 
 func (self *Table) GetTableType() *TableType {
@@ -136,7 +126,6 @@ func (self *Table) Release() {
 	if self._own {
 		C.WasmEdge_TableInstanceDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -149,9 +138,7 @@ func NewMemory(mtype *MemoryType) *Memory {
 	if memory == nil {
 		return nil
 	}
-	res := &Memory{_inner: memory, _own: true}
-	runtime.SetFinalizer(res, (*Memory).Release)
-	return res
+	return &Memory{_inner: memory, _own: true}
 }
 
 func (self *Memory) GetMemoryType() *MemoryType {
@@ -203,7 +190,6 @@ func (self *Memory) Release() {
 	if self._own {
 		C.WasmEdge_MemoryInstanceDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
@@ -217,9 +203,7 @@ func NewGlobal(gtype *GlobalType, val interface{}) *Global {
 	if global == nil {
 		return nil
 	}
-	res := &Global{_inner: global, _own: true}
-	runtime.SetFinalizer(res, (*Global).Release)
-	return res
+	return &Global{_inner: global, _own: true}
 }
 
 func (self *Global) GetGlobalType() *GlobalType {
@@ -242,7 +226,6 @@ func (self *Global) Release() {
 	if self._own {
 		C.WasmEdge_GlobalInstanceDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

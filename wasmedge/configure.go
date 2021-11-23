@@ -2,7 +2,6 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "runtime"
 
 type Proposal C.enum_WasmEdge_Proposal
 
@@ -46,6 +45,15 @@ const (
 	CompilerOptLevel_Oz = CompilerOptimizationLevel(C.WasmEdge_CompilerOptimizationLevel_Oz)
 )
 
+type CompilerOutputFormat C.enum_WasmEdge_CompilerOutputFormat
+
+const (
+	/// Native dynamic library format.
+	CompilerOutputFormat_Native = CompilerOutputFormat(C.WasmEdge_CompilerOutputFormat_Native)
+	/// WebAssembly with AOT compiled codes in custom section.
+	CompilerOutputFormat_Wasm = CompilerOutputFormat(C.WasmEdge_CompilerOutputFormat_Wasm)
+)
+
 type Configure struct {
 	_inner *C.WasmEdge_ConfigureContext
 	_own   bool
@@ -68,9 +76,7 @@ func NewConfigure(params ...interface{}) *Configure {
 		}
 	}
 
-	res := &Configure{_inner: conf, _own: true}
-	runtime.SetFinalizer(res, (*Configure).Release)
-	return res
+	return &Configure{_inner: conf, _own: true}
 }
 
 func (self *Configure) HasConfig(conf interface{}) bool {
@@ -114,12 +120,28 @@ func (self *Configure) GetCompilerOptimizationLevel() CompilerOptimizationLevel 
 	return CompilerOptimizationLevel(C.WasmEdge_ConfigureCompilerGetOptimizationLevel(self._inner))
 }
 
+func (self *Configure) SetCompilerOutputFormat(format CompilerOutputFormat) {
+	C.WasmEdge_ConfigureCompilerSetOutputFormat(self._inner, C.enum_WasmEdge_CompilerOutputFormat(format))
+}
+
+func (self *Configure) GetCompilerOutputFormat() CompilerOutputFormat {
+	return CompilerOutputFormat(C.WasmEdge_ConfigureCompilerGetOutputFormat(self._inner))
+}
+
 func (self *Configure) SetCompilerDumpIR(isdump bool) {
 	C.WasmEdge_ConfigureCompilerSetDumpIR(self._inner, C.bool(isdump))
 }
 
 func (self *Configure) IsCompilerDumpIR() bool {
 	return bool(C.WasmEdge_ConfigureCompilerIsDumpIR(self._inner))
+}
+
+func (self *Configure) SetCompilerGenericBinary(isgeneric bool) {
+	C.WasmEdge_ConfigureCompilerSetGenericBinary(self._inner, C.bool(isgeneric))
+}
+
+func (self *Configure) IsCompilerGenericBinary() bool {
+	return bool(C.WasmEdge_ConfigureCompilerIsGenericBinary(self._inner))
 }
 
 func (self *Configure) SetStatisticsInstructionCounting(iscount bool) {
@@ -150,7 +172,6 @@ func (self *Configure) Release() {
 	if self._own {
 		C.WasmEdge_ConfigureDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }

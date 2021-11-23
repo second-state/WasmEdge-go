@@ -2,7 +2,6 @@ package wasmedge
 
 // #include <wasmedge/wasmedge.h>
 import "C"
-import "runtime"
 
 type Statistics struct {
 	_inner *C.WasmEdge_StatisticsContext
@@ -14,9 +13,7 @@ func NewStatistics() *Statistics {
 	if stat == nil {
 		return nil
 	}
-	res := &Statistics{_inner: stat, _own: true}
-	runtime.SetFinalizer(res, (*Statistics).Release)
-	return res
+	return &Statistics{_inner: stat, _own: true}
 }
 
 func (self *Statistics) GetInstrCount() uint {
@@ -47,7 +44,6 @@ func (self *Statistics) Release() {
 	if self._own {
 		C.WasmEdge_StatisticsDelete(self._inner)
 	}
-	runtime.SetFinalizer(self, nil)
 	self._inner = nil
 	self._own = false
 }
