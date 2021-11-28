@@ -17,14 +17,12 @@ func NewImportObject(modname string) *ImportObject {
 	return &ImportObject{_inner: obj, _own: true}
 }
 
-func NewWasiImportObject(args []string, envs []string, dirs []string, preopens []string) *ImportObject {
+func NewWasiImportObject(args []string, envs []string, preopens []string) *ImportObject {
 	cargs := toCStringArray(args)
 	cenvs := toCStringArray(envs)
-	cdirs := toCStringArray(dirs)
 	cpreopens := toCStringArray(preopens)
 	var ptrargs *(*C.char) = nil
 	var ptrenvs *(*C.char) = nil
-	var ptrdirs *(*C.char) = nil
 	var ptrpreopens *(*C.char) = nil
 	if len(cargs) > 0 {
 		ptrargs = &cargs[0]
@@ -32,21 +30,17 @@ func NewWasiImportObject(args []string, envs []string, dirs []string, preopens [
 	if len(cenvs) > 0 {
 		ptrenvs = &cenvs[0]
 	}
-	if len(cdirs) > 0 {
-		ptrdirs = &cdirs[0]
-	}
 	if len(cpreopens) > 0 {
 		ptrpreopens = &cpreopens[0]
 	}
 
-	obj := C.WasmEdge_ImportObjectCreateWASI(ptrargs, C.uint32_t(len(cargs)),
+	obj := C.WasmEdge_ImportObjectCreateWASI(
+		ptrargs, C.uint32_t(len(cargs)),
 		ptrenvs, C.uint32_t(len(cenvs)),
-		ptrdirs, C.uint32_t(len(cdirs)),
 		ptrpreopens, C.uint32_t(len(cpreopens)))
 
 	freeCStringArray(cargs)
 	freeCStringArray(cenvs)
-	freeCStringArray(cdirs)
 	freeCStringArray(cpreopens)
 
 	if obj == nil {
@@ -55,23 +49,18 @@ func NewWasiImportObject(args []string, envs []string, dirs []string, preopens [
 	return &ImportObject{_inner: obj, _own: true}
 }
 
-func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, preopens []string) {
+func (self *ImportObject) InitWasi(args []string, envs []string, preopens []string) {
 	cargs := toCStringArray(args)
 	cenvs := toCStringArray(envs)
-	cdirs := toCStringArray(dirs)
 	cpreopens := toCStringArray(preopens)
 	var ptrargs *(*C.char) = nil
 	var ptrenvs *(*C.char) = nil
-	var ptrdirs *(*C.char) = nil
 	var ptrpreopens *(*C.char) = nil
 	if len(cargs) > 0 {
 		ptrargs = &cargs[0]
 	}
 	if len(cenvs) > 0 {
 		ptrenvs = &cenvs[0]
-	}
-	if len(cdirs) > 0 {
-		ptrdirs = &cdirs[0]
 	}
 	if len(cpreopens) > 0 {
 		ptrpreopens = &cpreopens[0]
@@ -80,13 +69,15 @@ func (self *ImportObject) InitWasi(args []string, envs []string, dirs []string, 
 	C.WasmEdge_ImportObjectInitWASI(self._inner,
 		ptrargs, C.uint32_t(len(cargs)),
 		ptrenvs, C.uint32_t(len(cenvs)),
-		ptrdirs, C.uint32_t(len(cdirs)),
 		ptrpreopens, C.uint32_t(len(cpreopens)))
 
 	freeCStringArray(cargs)
 	freeCStringArray(cenvs)
-	freeCStringArray(cdirs)
 	freeCStringArray(cpreopens)
+}
+
+func (self *ImportObject) WasiGetExitCode() uint {
+	return uint(C.WasmEdge_ImportObjectWASIGetExitCode(self._inner))
 }
 
 func NewWasmEdgeProcessImportObject(allowedcmds []string, allowall bool) *ImportObject {
