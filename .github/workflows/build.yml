@@ -13,12 +13,12 @@ on:
       - master
 
 jobs:
-  build:
+  build_ubuntu:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
         go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
-    name: Build WasmEdge-go with Go ${{ matrix.go }}
+    name: Build WasmEdge-go on Ubuntu with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
       - name: Install go
@@ -29,10 +29,34 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all -v 0.9.0-rc.4
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.9.0-rc.5
       - name: Build WasmEdge-go without any extensions
         run: |
+          source $HOME/.wasmedge/env
           go build ./wasmedge/
       - name: Build WasmEdge-go with tensorflow and images extensions
         run: |
+          source $HOME/.wasmedge/env
           go build -tags image,tensorflow ./wasmedge/
+
+  build_macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
+    name: Build WasmEdge-go on MacOS with Go ${{ matrix.go }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Check go version
+        run: go version
+      - name: Install wasmedge
+        run: |
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.9.0-rc.5
+      - name: Build WasmEdge-go without any extensions
+        run: |
+          source $HOME/.wasmedge/env
+          go build ./wasmedge/
