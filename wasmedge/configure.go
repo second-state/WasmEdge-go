@@ -112,6 +112,14 @@ func (self *Configure) RemoveConfig(conf interface{}) {
 	}
 }
 
+func (self *Configure) SetMaxMemoryPage(pagesize uint) {
+	C.WasmEdge_ConfigureSetMaxMemoryPage(self._inner, C.uint32_t(pagesize))
+}
+
+func (self *Configure) GetMaxMemoryPage() uint {
+	return uint(C.WasmEdge_ConfigureGetMaxMemoryPage(self._inner))
+}
+
 func (self *Configure) SetCompilerOptimizationLevel(level CompilerOptimizationLevel) {
 	C.WasmEdge_ConfigureCompilerSetOptimizationLevel(self._inner, C.enum_WasmEdge_CompilerOptimizationLevel(level))
 }
