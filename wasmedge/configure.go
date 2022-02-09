@@ -14,10 +14,11 @@ const (
 	REFERENCE_TYPES                   = Proposal(C.WasmEdge_Proposal_ReferenceTypes)
 	SIMD                              = Proposal(C.WasmEdge_Proposal_SIMD)
 	TAIL_CALL                         = Proposal(C.WasmEdge_Proposal_TailCall)
+	MULTI_MEMORIES                    = Proposal(C.WasmEdge_Proposal_MultiMemories)
 	ANNOTATIONS                       = Proposal(C.WasmEdge_Proposal_Annotations)
 	MEMORY64                          = Proposal(C.WasmEdge_Proposal_Memory64)
-	THREADS                           = Proposal(C.WasmEdge_Proposal_Threads)
 	EXCEPTION_HANDLING                = Proposal(C.WasmEdge_Proposal_ExceptionHandling)
+	THREADS                           = Proposal(C.WasmEdge_Proposal_Threads)
 	FUNCTION_REFERENCES               = Proposal(C.WasmEdge_Proposal_FunctionReferences)
 )
 

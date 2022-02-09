@@ -131,6 +131,54 @@ func (self *VM) RunWasmAST(ast *AST, funcname string, params ...interface{}) ([]
 	return self.runWasm(funcname, params...)
 }
 
+func (self *VM) AsyncRunWasmFile(path string, funcname string, params ...interface{}) *Async {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+	funcstr := toWasmEdgeStringWrap(funcname)
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_VMAsyncRunWasmFromFile(
+		self._inner, cpath, funcstr, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
+}
+
+func (self *VM) AsyncRunWasmBuffer(buf []byte, funcname string, params ...interface{}) *Async {
+	funcstr := toWasmEdgeStringWrap(funcname)
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_VMAsyncRunWasmFromBuffer(
+		self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)),
+		funcstr, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
+}
+
+func (self *VM) AsyncRunWasmAST(ast *AST, funcname string, params ...interface{}) *Async {
+	funcstr := toWasmEdgeStringWrap(funcname)
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_VMAsyncRunWasmFromASTModule(
+		self._inner, ast._inner, funcstr, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
+}
+
 func (self *VM) LoadWasmFile(path string) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
@@ -200,6 +248,20 @@ func (self *VM) Execute(funcname string, params ...interface{}) ([]interface{}, 
 	return fromWasmEdgeValueSlide(creturns), nil
 }
 
+func (self *VM) AsyncExecute(funcname string, params ...interface{}) *Async {
+	funcstr := toWasmEdgeStringWrap(funcname)
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_VMAsyncExecute(self._inner, funcstr, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
+}
+
 // Special execute function for running with wasm-bindgen.
 func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...interface{}) (interface{}, error) {
 	funcstr := toWasmEdgeStringWrap(funcname)
@@ -254,6 +316,21 @@ func (self *VM) ExecuteRegistered(modname string, funcname string, params ...int
 		return nil, newError(res)
 	}
 	return fromWasmEdgeValueSlide(creturns), nil
+}
+
+func (self *VM) AsyncExecuteRegistered(modname string, funcname string, params ...interface{}) *Async {
+	modstr := toWasmEdgeStringWrap(modname)
+	funcstr := toWasmEdgeStringWrap(funcname)
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_VMAsyncExecuteRegistered(self._inner, modstr, funcstr, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
 }
 
 // Special execute function for running with wasm-bindgen.
