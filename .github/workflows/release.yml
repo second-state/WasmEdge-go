@@ -31,5 +31,5 @@ jobs:
         release_name: WasmEdge Go ${{ steps.prep.outputs.version }}
         body_path: .CurrentChangelog.md
         draft: true
-        prerelease: false
+        prerelease: true
         
