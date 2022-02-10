@@ -1,3 +1,22 @@
+### v0.9.1 (2022-02-10)
+
+Features:
+
+* Updated to the [WasmEdge 0.9.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.9.1).
+* Added the new APIs.
+  * Added the `Async` struct for asynchronize function execution.
+    * Added `(*Async).WaitFor` API.
+    * Added `(*Async).Cancel` API.
+    * Added `(*Async).GetResult` API.
+    * Added `(*Async).Release` API.
+  * Added the asynchronize function execution in `VM`.
+    * Added `(*VM).AsyncRunWasmFile` API.
+    * Added `(*VM).AsyncRunWasmBuffer` API.
+    * Added `(*VM).AsyncRunWasmAST` API.
+    * Added `(*VM).AsyncExecute` API.
+    * Added `(*VM).AsyncExecuteRegistered` API.
+* Synchronized and Updated the `Proposal` order with `WasmEdge 0.9.1`.
+
 ### v0.9.0 (2021-12-09)
 
 Breaking Changes:
