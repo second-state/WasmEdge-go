@@ -1,6 +1,7 @@
 package wasmedge
 
 // #include <wasmedge/wasmedge.h>
+// #include <stdlib.h>
 import "C"
 import "unsafe"
 

@@ -2,6 +2,8 @@ package wasmedge
 
 /*
 #include <wasmedge/wasmedge.h>
+#include <stdlib.h>
+
 size_t _GoStringLen(_GoString_ s);
 const char *_GoStringPtr(_GoString_ s);
 */
