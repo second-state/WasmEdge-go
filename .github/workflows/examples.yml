@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.17.x', '1.16.x', '1.15.x', '1.17', '1.16', '1.15' ]
+        go: [ '1.17.x', '1.16.x' ]
     name: Run WasmEdge-go-examples in AOT mode with Go ${{ matrix.go }}
 
     steps:
@@ -176,7 +176,7 @@ jobs:
     
     strategy:
       matrix:
-        go: [ '1.17.x', '1.16.x', '1.15.x', '1.17', '1.16', '1.15' ]
+        go: [ '1.17.x', '1.16.x' ]
     name: Run WasmEdge-go-examples in interpreter mode with Go ${{ matrix.go }}
 
     steps:

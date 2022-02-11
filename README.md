@@ -8,7 +8,7 @@ The [WasmEdge](https://github.com/WasmEdge/WasmEdge) (formerly SSVM) is a high p
 
 ## Getting Started
 
-The `WasmEdge-go` requires `golang` version >= `1.15`. Please check your `golang` version before installation.
+The `WasmEdge-go` requires `golang` version >= `1.16`. Please check your `golang` version before installation.
 Developers can [download golang here](https://golang.org/dl/).
 
 ```bash

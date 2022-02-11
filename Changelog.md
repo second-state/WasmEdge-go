@@ -1,4 +1,30 @@
-### v0.9.1 (2022-02-10)
+### v0.9.2 (2022-02-11)
+
+This version is the bug fixing for `WasmEdge-go v0.9.1`, and the version `v0.9.1` is retracted.
+Developers should install the [WasmEdge 0.9.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.9.1) for using this package.
+
+Fixed issues:
+
+* Fixed the lost headers.
+
+Features:
+
+* Updated to the [WasmEdge 0.9.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.9.1).
+* Added the new APIs.
+  * Added the `Async` struct for asynchronize function execution.
+    * Added `(*Async).WaitFor` API.
+    * Added `(*Async).Cancel` API.
+    * Added `(*Async).GetResult` API.
+    * Added `(*Async).Release` API.
+  * Added the asynchronize function execution in `VM`.
+    * Added `(*VM).AsyncRunWasmFile` API.
+    * Added `(*VM).AsyncRunWasmBuffer` API.
+    * Added `(*VM).AsyncRunWasmAST` API.
+    * Added `(*VM).AsyncExecute` API.
+    * Added `(*VM).AsyncExecuteRegistered` API.
+* Synchronized and Updated the `Proposal` order with `WasmEdge 0.9.1`.
+
+### v0.9.1 (2022-02-10) (Retract)
 
 Features:
 

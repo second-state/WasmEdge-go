@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "*"
   pull_request:
     branches:
       - master
@@ -17,7 +19,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
+        go: [ '1.17.x', '1.16.x' ]
     name: Build WasmEdge-go on Ubuntu with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
@@ -43,7 +45,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        go: [ '1.16.x', '1.15.x', '1.16', '1.15' ]
+        go: [ '1.17.x', '1.16.x' ]
     name: Build WasmEdge-go on MacOS with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
