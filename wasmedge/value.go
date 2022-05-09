@@ -312,10 +312,10 @@ func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals 
 			mallocsize := uint32(len(val.([]byte)))
 			var rets []interface{}
 			var err error = nil
-			if modname != nil {
-				rets, err = vm.ExecuteRegistered(*modname, "__wbindgen_malloc", mallocsize)
-			} else {
+			if modname == nil {
 				rets, err = vm.Execute("__wbindgen_malloc", mallocsize)
+			} else {
+				rets, err = vm.ExecuteRegistered(*modname, "__wbindgen_malloc", mallocsize)
 			}
 			if err != nil {
 				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
@@ -329,7 +329,7 @@ func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals 
 			// Set bytes
 			var mod *Module = nil
 			var mem *Memory = nil
-			if modname != nil {
+			if modname == nil {
 				mod = vm.GetActiveModule()
 			} else {
 				store := vm.GetStore()
@@ -376,7 +376,7 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 		// Get memory context
 		var mod *Module = nil
 		var mem *Memory = nil
-		if modname != nil {
+		if modname == nil {
 			mod = vm.GetActiveModule()
 		} else {
 			store := vm.GetStore()
@@ -405,7 +405,7 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 		// Get memory context
 		var mod *Module = nil
 		var mem *Memory = nil
-		if modname != nil {
+		if modname == nil {
 			mod = vm.GetActiveModule()
 		} else {
 			store := vm.GetStore()
@@ -437,10 +437,10 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 			return nil, err
 		}
 		// Free array
-		if modname != nil {
-			_, err = vm.ExecuteRegistered(*modname, "__wbindgen_free", arraddr, arrlen)
-		} else {
+		if modname == nil {
 			_, err = vm.Execute("__wbindgen_free", arraddr, arrlen)
+		} else {
+			_, err = vm.ExecuteRegistered(*modname, "__wbindgen_free", arraddr, arrlen)
 		}
 		if err != nil {
 			panic("fromWasmEdgeValueSlideBindgen(): malloc failed")
