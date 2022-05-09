@@ -3,13 +3,29 @@ package wasmedge
 /*
 #include <wasmedge/wasmedge.h>
 
-typedef void (*wasmedgego_HostFuncWrapper)
-  (void *, void *, WasmEdge_MemoryInstanceContext *, const WasmEdge_Value *, const uint32_t, WasmEdge_Value *, const uint32_t);
+typedef void (*wasmedgego_HostFuncWrapper)(void *, void *,
+                                           WasmEdge_MemoryInstanceContext *,
+                                           const WasmEdge_Value *,
+                                           const uint32_t, WasmEdge_Value *,
+                                           const uint32_t);
 
-WasmEdge_Result wasmedgego_HostFuncInvoke(void *Func, void *Data,
-                                  WasmEdge_MemoryInstanceContext *MemCxt,
-                                  const WasmEdge_Value *Params, const uint32_t ParamLen,
-                                  WasmEdge_Value *Returns, const uint32_t ReturnLen);
+WasmEdge_Result
+wasmedgego_HostFuncInvoke(void *Func, void *Data,
+                          WasmEdge_MemoryInstanceContext *MemCxt,
+                          const WasmEdge_Value *Params, const uint32_t ParamLen,
+                          WasmEdge_Value *Returns, const uint32_t ReturnLen);
+
+typedef uint32_t (*wasmedgego_GetExport)(const WasmEdge_ModuleInstanceContext *,
+                                         WasmEdge_String *, const uint32_t);
+typedef uint32_t (*wasmedgego_GetRegExport)(
+    const WasmEdge_ModuleInstanceContext *, WasmEdge_String, WasmEdge_String *,
+    const uint32_t);
+
+uint32_t wasmedgego_WrapListExport(wasmedgego_GetExport F,
+                                   const WasmEdge_ModuleInstanceContext *Cxt,
+                                   WasmEdge_String *Names, const uint32_t Len) {
+  return F(Cxt, Names, Len);
+}
 */
 import "C"
 import (
@@ -17,6 +33,12 @@ import (
 	"reflect"
 	"unsafe"
 )
+
+type Module struct {
+	_inner     *C.WasmEdge_ModuleInstanceContext
+	_hostfuncs []uint
+	_own       bool
+}
 
 type Function struct {
 	_inner *C.WasmEdge_FunctionInstanceContext
@@ -37,6 +59,222 @@ type Memory struct {
 type Global struct {
 	_inner *C.WasmEdge_GlobalInstanceContext
 	_own   bool
+}
+
+func NewModule(modname string) *Module {
+	module := C.WasmEdge_ModuleInstanceCreate(toWasmEdgeStringWrap(modname))
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiModule(args []string, envs []string, preopens []string) *Module {
+	cargs := toCStringArray(args)
+	cenvs := toCStringArray(envs)
+	cpreopens := toCStringArray(preopens)
+	var ptrargs *(*C.char) = nil
+	var ptrenvs *(*C.char) = nil
+	var ptrpreopens *(*C.char) = nil
+	if len(cargs) > 0 {
+		ptrargs = &cargs[0]
+	}
+	if len(cenvs) > 0 {
+		ptrenvs = &cenvs[0]
+	}
+	if len(cpreopens) > 0 {
+		ptrpreopens = &cpreopens[0]
+	}
+
+	module := C.WasmEdge_ModuleInstanceCreateWASI(
+		ptrargs, C.uint32_t(len(cargs)),
+		ptrenvs, C.uint32_t(len(cenvs)),
+		ptrpreopens, C.uint32_t(len(cpreopens)))
+
+	freeCStringArray(cargs)
+	freeCStringArray(cenvs)
+	freeCStringArray(cpreopens)
+
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func (self *Module) InitWasi(args []string, envs []string, preopens []string) {
+	cargs := toCStringArray(args)
+	cenvs := toCStringArray(envs)
+	cpreopens := toCStringArray(preopens)
+	var ptrargs *(*C.char) = nil
+	var ptrenvs *(*C.char) = nil
+	var ptrpreopens *(*C.char) = nil
+	if len(cargs) > 0 {
+		ptrargs = &cargs[0]
+	}
+	if len(cenvs) > 0 {
+		ptrenvs = &cenvs[0]
+	}
+	if len(cpreopens) > 0 {
+		ptrpreopens = &cpreopens[0]
+	}
+
+	C.WasmEdge_ModuleInstanceInitWASI(self._inner,
+		ptrargs, C.uint32_t(len(cargs)),
+		ptrenvs, C.uint32_t(len(cenvs)),
+		ptrpreopens, C.uint32_t(len(cpreopens)))
+
+	freeCStringArray(cargs)
+	freeCStringArray(cenvs)
+	freeCStringArray(cpreopens)
+}
+
+func (self *Module) WasiGetExitCode() uint {
+	return uint(C.WasmEdge_ModuleInstanceWASIGetExitCode(self._inner))
+}
+
+// TODO: Remove the `wasmedge_process` related API now for supporting plug-in in the future.
+/*
+func NewWasmEdgeProcessModule(allowedcmds []string, allowall bool) *Module {
+	ccmds := toCStringArray(allowedcmds)
+	var ptrcmds *(*C.char) = nil
+	if len(ccmds) > 0 {
+		ptrcmds = &ccmds[0]
+	}
+
+	module := C.WasmEdge_ModuleInstanceCreateWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
+
+	freeCStringArray(ccmds)
+
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func (self *Module) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
+	ccmds := toCStringArray(allowedcmds)
+	var ptrcmds *(*C.char) = nil
+	if len(ccmds) > 0 {
+		ptrcmds = &ccmds[0]
+	}
+
+	C.WasmEdge_ModuleInstanceInitWasmEdgeProcess(self._inner, ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
+
+	freeCStringArray(ccmds)
+}
+*/
+
+func (self *Module) AddFunction(name string, inst *Function) {
+	C.WasmEdge_ModuleInstanceAddFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	self._hostfuncs = append(self._hostfuncs, inst._index)
+	inst._inner = nil
+	inst._own = false
+}
+
+func (self *Module) AddTable(name string, inst *Table) {
+	C.WasmEdge_ModuleInstanceAddTable(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	inst._inner = nil
+	inst._own = false
+}
+
+func (self *Module) AddMemory(name string, inst *Memory) {
+	C.WasmEdge_ModuleInstanceAddMemory(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	inst._inner = nil
+	inst._own = false
+}
+
+func (self *Module) AddGlobal(name string, inst *Global) {
+	C.WasmEdge_ModuleInstanceAddGlobal(self._inner, toWasmEdgeStringWrap(name), inst._inner)
+	inst._inner = nil
+	inst._own = false
+}
+
+func (self *Module) getExports(exportlen C.uint32_t, getfunc C.wasmedgego_GetExport) []string {
+	cnames := make([]C.WasmEdge_String, int(exportlen))
+	if int(exportlen) > 0 {
+		C.wasmedgego_WrapListExport(getfunc, self._inner, &cnames[0], exportlen)
+	}
+	names := make([]string, int(exportlen))
+	for i := 0; i < int(exportlen); i++ {
+		names[i] = fromWasmEdgeString(cnames[i])
+	}
+	return names
+}
+
+func (self *Module) FindFunction(name string) *Function {
+	cname := toWasmEdgeStringWrap(name)
+	cinst := C.WasmEdge_ModuleInstanceFindFunction(self._inner, cname)
+	if cinst == nil {
+		return nil
+	}
+	return &Function{_inner: cinst, _own: false}
+}
+
+func (self *Module) FindTable(name string) *Table {
+	cname := toWasmEdgeStringWrap(name)
+	cinst := C.WasmEdge_ModuleInstanceFindTable(self._inner, cname)
+	if cinst == nil {
+		return nil
+	}
+	return &Table{_inner: cinst, _own: false}
+}
+
+func (self *Module) FindMemory(name string) *Memory {
+	cname := toWasmEdgeStringWrap(name)
+	cinst := C.WasmEdge_ModuleInstanceFindMemory(self._inner, cname)
+	if cinst == nil {
+		return nil
+	}
+	return &Memory{_inner: cinst, _own: false}
+}
+
+func (self *Module) FindGlobal(name string) *Global {
+	cname := toWasmEdgeStringWrap(name)
+	cinst := C.WasmEdge_ModuleInstanceFindGlobal(self._inner, cname)
+	if cinst == nil {
+		return nil
+	}
+	return &Global{_inner: cinst, _own: false}
+}
+
+func (self *Module) ListFunction() []string {
+	return self.getExports(
+		C.WasmEdge_ModuleInstanceListFunctionLength(self._inner),
+		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListFunction),
+	)
+}
+
+func (self *Module) ListTable() []string {
+	return self.getExports(
+		C.WasmEdge_ModuleInstanceListTableLength(self._inner),
+		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListTable),
+	)
+}
+
+func (self *Module) ListMemory() []string {
+	return self.getExports(
+		C.WasmEdge_ModuleInstanceListMemoryLength(self._inner),
+		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListMemory),
+	)
+}
+
+func (self *Module) ListGlobal() []string {
+	return self.getExports(
+		C.WasmEdge_ModuleInstanceListGlobalLength(self._inner),
+		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListGlobal),
+	)
+}
+
+func (self *Module) Release() {
+	if self._own {
+		for _, idx := range self._hostfuncs {
+			hostfuncMgr.del(idx)
+		}
+		self._hostfuncs = []uint{}
+		C.WasmEdge_ModuleInstanceDelete(self._inner)
+	}
+	self._inner = nil
+	self._own = false
 }
 
 func NewFunction(ftype *FunctionType, fn hostFunctionSignature, additional interface{}, cost uint) *Function {

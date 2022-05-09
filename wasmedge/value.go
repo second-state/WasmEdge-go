@@ -122,10 +122,18 @@ type FuncRef struct {
 	_inner C.WasmEdge_Value
 }
 
-func NewFuncRef(funcidx uint) FuncRef {
+func NewFuncRef(funcinst *Function) FuncRef {
 	return FuncRef{
-		_inner: C.WasmEdge_ValueGenFuncRef(C.uint32_t(funcidx)),
+		_inner: C.WasmEdge_ValueGenFuncRef(funcinst._inner),
 	}
+}
+
+func (self FuncRef) GetRef() *Function {
+	funcinst := C.WasmEdge_ValueGetFuncRef(self._inner)
+	if funcinst != nil {
+		return &Function{_inner: funcinst, _own: false}
+	}
+	return nil
 }
 
 type ExternRef struct {
@@ -319,23 +327,22 @@ func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals 
 			argsize := C.WasmEdge_ValueGenI32(C.int32_t(mallocsize))
 			cvals = append(cvals, argaddr, argsize)
 			// Set bytes
-			store := vm.GetStore()
-			var memnames []string
+			var mod *Module = nil
 			var mem *Memory = nil
 			if modname != nil {
-				memnames = store.ListMemoryRegistered(*modname)
+				mod = vm.GetActiveModule()
 			} else {
-				memnames = store.ListMemory()
+				store := vm.GetStore()
+				mod = store.FindModule(*modname)
 			}
-			if len(memnames) <= 0 {
-				panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+			if mod != nil {
+				memnames := mod.ListMemory()
+				if len(memnames) <= 0 {
+					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+				}
+				mem = mod.FindMemory(memnames[0])
+				mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
 			}
-			if modname != nil {
-				mem = store.FindMemoryRegistered(*modname, memnames[0])
-			} else {
-				mem = store.FindMemory(memnames[0])
-			}
-			mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
 		default:
 			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
 			panic(errorString)
@@ -367,23 +374,24 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 		return returns[0], nil
 	case Bindgen_return_i64:
 		// Get memory context
-		store := vm.GetStore()
-		var memnames []string
+		var mod *Module = nil
 		var mem *Memory = nil
 		if modname != nil {
-			memnames = store.ListMemoryRegistered(*modname)
+			mod = vm.GetActiveModule()
 		} else {
-			memnames = store.ListMemory()
+			store := vm.GetStore()
+			mod = store.FindModule(*modname)
 		}
-		if len(memnames) <= 0 {
-			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
-		}
-		if modname != nil {
-			mem = store.FindMemoryRegistered(*modname, memnames[0])
-		} else {
-			mem = store.FindMemory(memnames[0])
+		if mod != nil {
+			memnames := mod.ListMemory()
+			if len(memnames) > 0 {
+				mem = mod.FindMemory(memnames[0])
+			}
 		}
 		// Get int64
+		if mem == nil {
+			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
+		}
 		buf, err := mem.GetData(0, 8)
 		if err != nil {
 			return nil, err
@@ -395,23 +403,24 @@ func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cva
 		return num, nil
 	case Bindgen_return_array:
 		// Get memory context
-		store := vm.GetStore()
-		var memnames []string
+		var mod *Module = nil
 		var mem *Memory = nil
 		if modname != nil {
-			memnames = store.ListMemoryRegistered(*modname)
+			mod = vm.GetActiveModule()
 		} else {
-			memnames = store.ListMemory()
+			store := vm.GetStore()
+			mod = store.FindModule(*modname)
 		}
-		if len(memnames) <= 0 {
-			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
-		}
-		if modname != nil {
-			mem = store.FindMemoryRegistered(*modname, memnames[0])
-		} else {
-			mem = store.FindMemory(memnames[0])
+		if mod != nil {
+			memnames := mod.ListMemory()
+			if len(memnames) > 0 {
+				mem = mod.FindMemory(memnames[0])
+			}
 		}
 		// Get address and length (array result address = 8)
+		if mem == nil {
+			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
+		}
 		buf, err := mem.GetData(8, 8)
 		if err != nil {
 			return nil, err

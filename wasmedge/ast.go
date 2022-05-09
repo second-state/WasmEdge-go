@@ -177,7 +177,11 @@ func (self *FunctionType) Release() {
 
 func NewTableType(rtype RefType, lim *Limit) *TableType {
 	crtype := C.enum_WasmEdge_RefType(rtype)
-	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
+	climit := C.WasmEdge_Limit{
+		HasMax: C.bool(lim.hasmax),
+		Min:    C.uint32_t(lim.min),
+		Max:    C.uint32_t(lim.max),
+	}
 	ttype := C.WasmEdge_TableTypeCreate(crtype, climit)
 	if ttype == nil {
 		return nil
@@ -210,7 +214,11 @@ func (self *TableType) Release() {
 }
 
 func NewMemoryType(lim *Limit) *MemoryType {
-	climit := C.WasmEdge_Limit{HasMax: C.bool(lim.hasmax), Min: C.uint32_t(lim.min), Max: C.uint32_t(lim.max)}
+	climit := C.WasmEdge_Limit{
+		HasMax: C.bool(lim.hasmax),
+		Min:    C.uint32_t(lim.min),
+		Max:    C.uint32_t(lim.max),
+	}
 	mtype := C.WasmEdge_MemoryTypeCreate(climit)
 	if mtype == nil {
 		return nil

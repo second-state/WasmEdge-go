@@ -10,18 +10,18 @@ package wasmedge
 */
 import "C"
 
-func NewTensorflowImportObject() *ImportObject {
-	obj := C.WasmEdge_Tensorflow_ImportObjectCreate()
+func NewTensorflowModule() *Module {
+	obj := C.WasmEdge_Tensorflow_ModuleInstanceCreate()
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj, _own: true}
+	return &Module{_inner: obj, _own: true}
 }
 
-func NewTensorflowLiteImportObject() *ImportObject {
-	obj := C.WasmEdge_TensorflowLite_ImportObjectCreate()
+func NewTensorflowLiteModule() *Module {
+	obj := C.WasmEdge_TensorflowLite_ModuleInstanceCreate()
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj, _own: true}
+	return &Module{_inner: obj, _own: true}
 }

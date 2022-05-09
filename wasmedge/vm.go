@@ -78,17 +78,17 @@ func (self *VM) RegisterWasmBuffer(modname string, buf []byte) error {
 	return nil
 }
 
-func (self *VM) RegisterImport(imp *ImportObject) error {
-	res := C.WasmEdge_VMRegisterModuleFromImport(self._inner, imp._inner)
+func (self *VM) RegisterAST(modname string, ast *AST) error {
+	modstr := toWasmEdgeStringWrap(modname)
+	res := C.WasmEdge_VMRegisterModuleFromASTModule(self._inner, modstr, ast._inner)
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
 	return nil
 }
 
-func (self *VM) RegisterAST(modname string, ast *AST) error {
-	modstr := toWasmEdgeStringWrap(modname)
-	res := C.WasmEdge_VMRegisterModuleFromASTModule(self._inner, modstr, ast._inner)
+func (self *VM) RegisterModule(module *Module) error {
+	res := C.WasmEdge_VMRegisterModuleFromImport(self._inner, module._inner)
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -404,10 +404,18 @@ func (self *VM) GetFunctionList() ([]string, []*FunctionType) {
 	return fnames, ftypes
 }
 
-func (self *VM) GetImportObject(host HostRegistration) *ImportObject {
+func (self *VM) GetImportModule(host HostRegistration) *Module {
 	ptr := C.WasmEdge_VMGetImportModuleContext(self._inner, C.enum_WasmEdge_HostRegistration(host))
 	if ptr != nil {
-		return &ImportObject{_inner: ptr, _own: false}
+		return &Module{_inner: ptr, _own: false}
+	}
+	return nil
+}
+
+func (self *VM) GetActiveModule() *Module {
+	ptr := C.WasmEdge_VMGetActiveModule(self._inner)
+	if ptr != nil {
+		return &Module{_inner: ptr, _own: false}
 	}
 	return nil
 }

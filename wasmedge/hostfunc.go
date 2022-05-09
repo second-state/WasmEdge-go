@@ -61,6 +61,7 @@ var hostfuncMgr = hostFunctionManager{
 func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_MemoryInstanceContext, params *C.WasmEdge_Value, paramlen C.uint32_t, returns *C.WasmEdge_Value, returnlen C.uint32_t) C.WasmEdge_Result {
 	gomem := &Memory{
 		_inner: mem,
+		_own:   false,
 	}
 
 	goparams := make([]interface{}, uint(paramlen))

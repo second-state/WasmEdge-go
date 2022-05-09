@@ -9,10 +9,10 @@ package wasmedge
 */
 import "C"
 
-func NewImageImportObject() *ImportObject {
-	obj := C.WasmEdge_Image_ImportObjectCreate()
+func NewImageModule() *Module {
+	obj := C.WasmEdge_Image_ModuleInstanceCreate()
 	if obj == nil {
 		return nil
 	}
-	return &ImportObject{_inner: obj, _own: true}
+	return &Module{_inner: obj, _own: true}
 }
