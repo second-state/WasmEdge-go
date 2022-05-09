@@ -1,6 +1,6 @@
 # WasmEdge for Go Package
 
-The [WasmEdge](https://github.com/WasmEdge/WasmEdge) (formerly SSVM) is a high performance WebAssembly runtime optimized for server side applications. This project provides a [golang](https://golang.org/) package for accessing to WasmEdge.
+The [WasmEdge](https://github.com/WasmEdge/WasmEdge) is a high performance WebAssembly runtime optimized for server side applications. This project provides a [golang](https://golang.org/) package for accessing to WasmEdge.
 
 * For a complete tutorial, please read the article [Extend Your Golang App with Embedded WebAssembly Functions in WasmEdge](https://www.secondstate.io/articles/extend-golang-app-with-webassembly-rust/), which demonstrates how to embed a Wasm function and how to embed a full Wasm program from the Golang app.
 * WasmEdge in real-time data strems: [AI Inference for Real-time Data Streams with WasmEdge and YoMo](https://www.secondstate.io/articles/yomo-wasmedge-real-time-data-streams/)
@@ -16,24 +16,26 @@ $ go version
 go version go1.16.5 linux/amd64
 ```
 
-Developers must [install the WasmEdge shared library](https://github.com/WasmEdge/WasmEdge/blob/master/docs/install.md) with the same `WasmEdge-go` release version.
+Developers must [install the WasmEdge shared library](https://wasmedge.org/book/en/start/install.html) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.9.1
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.10.0-alpha.1
 ```
 
 For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.9.1
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.0-alpha.1
 ```
 
 Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
 
+**The `TensorFlow` and `Image` extensions for `darwin x86_64` platforms are in the preview stage and unstable now.**
+
 Install the `WasmEdge-go` package and build in your Go project directory:
 
 ```bash
-go get github.com/second-state/WasmEdge-go/wasmedge@v0.9.1
+go get github.com/second-state/WasmEdge-go/wasmedge@v0.10.0-alpha.1
 go build
 ```
 
@@ -71,4 +73,4 @@ For examples, please refer to the [example repository](https://github.com/second
 
 ## WasmEdge-go Documentation
 
-Please refer to the [API Documentation](https://github.com/WasmEdge/WasmEdge/blob/master/docs/go_api.md) for details.
+Please refer to the [API Documentation](https://wasmedge.org/book/en/embed/go/ref.html) for details.

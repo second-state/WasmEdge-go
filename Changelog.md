@@ -1,3 +1,50 @@
+### v0.10.0-alpha.1 (2022-05-10)
+
+Breaking Changes:
+
+* `WasmEdge` updated. Please install the `WasmEdge 0.10.0-alpha.1` or newer version.
+* The `Module`-based resource management.
+  * The `Executor` will output a `Module` instance after instantiation now. Developers have the responsibility to destroy them by `(*wasmedge.Module).Release()` API.
+  * Merged the `ImportObject` into the `Module`.
+  * Removed the `ImportObject` structure.
+* `FuncRef` mechanism changes.
+  * For the better performance and security, the `FuncRef` related APIs used the `*wasmedge.Function` for the parameters and returns.
+* API changes.
+  * `wasmedge.NewFuncRef()` is changed to use the `*Function` as it's argument.
+  * Added `(wasmedge.FuncRef).GetRef()` to retrieve the `*Function`.
+  * Renamed `wasmedge.NewImportObject()` to `wasmedge.NewModule()`.
+  * Renamed `(*wasmedge.ImportObject).Release()` to `(*wasmedge.Module).Release()`.
+  * Renamed `(*wasmedge.ImportObject).AddFunction()` to `(*wasmedge.Module).AddFunction()`.
+  * Renamed `(*wasmedge.ImportObject).AddTable()` to `(*wasmedge.Module).AddTable()`.
+  * Renamed `(*wasmedge.ImportObject).AddMemory()` to `(*wasmedge.Module).AddMemory()`.
+  * Renamed `(*wasmedge.ImportObject).AddGlobal()` to `(*wasmedge.Module).AddGlobal()`.
+  * Renamed `(*wasmedge.ImportObject).NewWasiImportObject()` to `(*wasmedge.Module).NewWasiModule()`.
+  * Renamed `(*wasmedge.ImportObject).NewWasmEdgeProcessImportObject()` to `(*wasmedge.Module).NewWasmEdgeProcessModule()`.
+  * Renamed `(*wasmedge.ImportObject).InitWASI()` to `(*wasmedge.Module).InitWASI()`.
+  * Renamed `(*wasmedge.ImportObject).InitWasmEdgeProcess()` to `(*wasmedge.Module).InitWasmEdgeProcess()`.
+  * Renamed `(*wasmedge.ImportObject).WasiGetExitCode()` to `(*wasmedge.Module).WasiGetExitCode`.
+  * Renamed `(*wasmedge.VM).RegisterImport()` to `(*wasmedge.VM).RegisterModule()`.
+  * Renamed `(*wasmedge.VM).GetImportObject()` to `(*wasmedge.VM).GetImportModule()`.
+  * `(*wasmedge.Store).ListFunction()` and `(*wasmedge.Store).ListFunctionRegistered()` is replaced by `(*wasmedge.Module).ListFunction()`.
+  * `(*wasmedge.Store).ListTable()` and `(*wasmedge.Store).ListTableRegistered()` is replaced by `(*wasmedge.Module).ListTable()`.
+  * `(*wasmedge.Store).ListMemory()` and `(*wasmedge.Store).ListMemoryRegistered()` is replaced by `(*wasmedge.Module).ListMemory()`.
+  * `(*wasmedge.Store).ListGlobal()` and `(*wasmedge.Store).ListGlobalRegistered()` is replaced by `(*wasmedge.Module).ListGlobal()`.
+  * `(*wasmedge.Store).FindFunction()` and `(*wasmedge.Store).FindFunctionRegistered()` is replaced by `(*wasmedge.Module).FindFunction()`.
+  * `(*wasmedge.Store).FindTable()` and `(*wasmedge.Store).FindTableRegistered()` is replaced by `(*wasmedge.Module).FindTable()`.
+  * `(*wasmedge.Store).FindMemory()` and `(*wasmedge.Store).FindMemoryRegistered()` is replaced by `(*wasmedge.Module).FindMemory()`.
+  * `(*wasmedge.Store).FindGlobal()` and `(*wasmedge.Store).FindGlobalRegistered()` is replaced by `(*wasmedge.Module).FindGlobal()`.
+* Temporarily removed the `wasmedge_process` related APIs for supporting plug-in architecture in the future.
+  * Removed the `(*wasmedge.Module).NewWasmEdgeProcessModule()` API.
+  * Removed the `(*wasmedge.Module).InitWasmEdgeProcess()` API.
+
+Features:
+
+* Updated to the [WasmEdge 0.10.0-alpha.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.0-alpha.1).
+
+Documentation:
+
+* Updated the [documentation](https://wasmedge.org/book/en/embed/go/ref.html).
+
 ### v0.9.2 (2022-02-11)
 
 This version is the bug fixing for `WasmEdge-go v0.9.1`, and the version `v0.9.1` is retracted.
