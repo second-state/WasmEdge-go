@@ -20,7 +20,7 @@ jobs:
     - name: Get version
       id: prep
       run: |
-        git config --global --add safe.directory ($pwd)
+        git config --global --add safe.directory $(pwd)
         echo ::set-output name=version::$(git describe --tag)
     - name: Create Release
       id: create_release
