@@ -4,6 +4,7 @@ package wasmedge
 
 /*
 #cgo linux LDFLAGS: -lwasmedge-image_c
+#cgo darwin LDFLAGS: -lwasmedge-image_c
 
 #include <wasmedge/wasmedge-image.h>
 */

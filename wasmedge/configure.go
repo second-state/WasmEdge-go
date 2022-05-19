@@ -18,6 +18,7 @@ const (
 	ANNOTATIONS                       = Proposal(C.WasmEdge_Proposal_Annotations)
 	MEMORY64                          = Proposal(C.WasmEdge_Proposal_Memory64)
 	EXCEPTION_HANDLING                = Proposal(C.WasmEdge_Proposal_ExceptionHandling)
+	EXTENDED_CONST                    = Proposal(C.WasmEdge_Proposal_ExtendedConst)
 	THREADS                           = Proposal(C.WasmEdge_Proposal_Threads)
 	FUNCTION_REFERENCES               = Proposal(C.WasmEdge_Proposal_FunctionReferences)
 )
