@@ -61,4 +61,4 @@ jobs:
       - name: Build WasmEdge-go without any extensions
         run: |
           source $HOME/.wasmedge/env
-          go build ./wasmedge/
+          go build -tags image,tensorflow ./wasmedge/
