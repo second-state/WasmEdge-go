@@ -132,8 +132,6 @@ func (self *Module) WasiGetExitCode() uint {
 	return uint(C.WasmEdge_ModuleInstanceWASIGetExitCode(self._inner))
 }
 
-// TODO: Remove the `wasmedge_process` related API now for supporting plug-in in the future.
-/*
 func NewWasmEdgeProcessModule(allowedcmds []string, allowall bool) *Module {
 	ccmds := toCStringArray(allowedcmds)
 	var ptrcmds *(*C.char) = nil
@@ -158,11 +156,10 @@ func (self *Module) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
 		ptrcmds = &ccmds[0]
 	}
 
-	C.WasmEdge_ModuleInstanceInitWasmEdgeProcess(self._inner, ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
+	C.WasmEdge_ModuleInstanceInitWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
 
 	freeCStringArray(ccmds)
 }
-*/
 
 func (self *Module) AddFunction(name string, inst *Function) {
 	C.WasmEdge_ModuleInstanceAddFunction(self._inner, toWasmEdgeStringWrap(name), inst._inner)
