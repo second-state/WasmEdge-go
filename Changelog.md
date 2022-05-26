@@ -1,8 +1,8 @@
-### v0.10.0-rc.1 (2022-05-24)
+### v0.10.0 (2022-05-26)
 
 Breaking Changes:
 
-* `WasmEdge` updated. Please install the `WasmEdge 0.10.0-rc.1` or newer version.
+* `WasmEdge` updated. Please install the `WasmEdge 0.10.0` or newer version.
 * The `Module`-based resource management.
   * The `Executor` will output a `Module` instance after instantiation now. Developers have the responsibility to destroy them by `(*wasmedge.Module).Release()` API.
   * Merged the `ImportObject` into the `Module`.
@@ -39,7 +39,7 @@ Breaking Changes:
 
 Features:
 
-* Updated to the [WasmEdge 0.10.0-rc.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.0-rc.1).
+* Updated to the [WasmEdge 0.10.0](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.0).
 
 Documentation:
 
