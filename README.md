@@ -19,13 +19,13 @@ go version go1.16.5 linux/amd64
 Developers must [install the WasmEdge shared library](https://wasmedge.org/book/en/start/install.html) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.10.0
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.10.1-alpha.1
 ```
 
 For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.0
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.1-alpha.1
 ```
 
 Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
@@ -35,7 +35,7 @@ Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` pl
 Install the `WasmEdge-go` package and build in your Go project directory:
 
 ```bash
-go get github.com/second-state/WasmEdge-go/wasmedge@v0.10.0
+go get github.com/second-state/WasmEdge-go/wasmedge@v0.10.1-alpha.1
 go build
 ```
 
@@ -46,12 +46,23 @@ By default, the `WasmEdge-go` only turns on the basic runtime.
 `WasmEdge-go` has the following extensions:
 
 * Tensorflow
-  * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow).
+  * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow), includes both `TensorFlow` and `TensorFlow-Lite`.
   * The `TensorFlow` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e tensorflow` command.
   * For using this extension, the tag `tensorflow` when building is required:
 
     ```bash
     go build -tags tensorflow
+    ```
+
+* Tensorfloe-Lite
+  * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow) with only `TensorFlow-Lite`.
+  * The `TensorFlow` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e tensorflow` command.
+  * For the `aarch64` platforms which only supports `TensorFlow-Lite`, please build with this tag.
+  * **THIS TAG CANNOT BE USED WITH THE `tensorflow` TAG.**
+  * For using this extension, the tag `tensorflowlite` when building is required:
+
+    ```bash
+    go build -tags tensorflowlite
     ```
 
 * Image

@@ -1,3 +1,13 @@
+### v0.10.1-alpha.1 (2022-06-23)
+
+Fixed issues:
+
+* Supported the platforms with only `tensorflow-lite`. Please build with the `tensorflowlite` tags: `go build --tags tensorflowlite`.
+
+Features:
+
+* Updated to the [WasmEdge 0.10.1-alpha.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.1-alpha.1).
+
 ### v0.10.0 (2022-05-26)
 
 Breaking Changes:
