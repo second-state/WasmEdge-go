@@ -1,4 +1,4 @@
-### v0.10.1-alpha.1 (2022-06-23)
+### v0.10.1-alpha.2 (2022-07-05)
 
 Fixed issues:
 
@@ -6,7 +6,8 @@ Fixed issues:
 
 Features:
 
-* Updated to the [WasmEdge 0.10.1-alpha.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.1-alpha.1).
+* Updated to the [WasmEdge 0.10.1-alpha.2](https://github.com/WasmEdge/WasmEdge/releases/tag/0.10.1-alpha.2).
+* Supported the `threads` proposal and its data structures.
 
 ### v0.10.0 (2022-05-26)
 

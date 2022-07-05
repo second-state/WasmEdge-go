@@ -31,7 +31,7 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.1-alpha.1
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.1-alpha.2
       - name: Build WasmEdge-go without any extensions
         run: |
           source $HOME/.wasmedge/env
@@ -61,11 +61,15 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.1-alpha.1
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.10.1-alpha.2
       - name: Build WasmEdge-go without any extensions
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
+      - name: Build WasmEdge-go with tensorflow and images extensions
+        run: |
+          source $HOME/.wasmedge/env
+          go build -tags image,tensorflow ./wasmedge/
       - name: Build WasmEdge-go with tensorflowlite and images extensions
         run: |
           source $HOME/.wasmedge/env
