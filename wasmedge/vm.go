@@ -424,6 +424,18 @@ func (self *VM) GetStore() *Store {
 	return &Store{_inner: C.WasmEdge_VMGetStoreContext(self._inner), _own: false}
 }
 
+func (self *VM) GetLoader() *Loader {
+	return &Loader{_inner: C.WasmEdge_VMGetLoaderContext(self._inner), _own: false}
+}
+
+func (self *VM) GetValidator() *Validator {
+	return &Validator{_inner: C.WasmEdge_VMGetValidatorContext(self._inner), _own: false}
+}
+
+func (self *VM) GetExecutor() *Executor {
+	return &Executor{_inner: C.WasmEdge_VMGetExecutorContext(self._inner), _own: false}
+}
+
 func (self *VM) GetStatistics() *Statistics {
 	return &Statistics{_inner: C.WasmEdge_VMGetStatisticsContext(self._inner), _own: false}
 }

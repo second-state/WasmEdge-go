@@ -179,6 +179,7 @@ func NewTableType(rtype RefType, lim *Limit) *TableType {
 	crtype := C.enum_WasmEdge_RefType(rtype)
 	climit := C.WasmEdge_Limit{
 		HasMax: C.bool(lim.hasmax),
+		Shared: C.bool(lim.shared),
 		Min:    C.uint32_t(lim.min),
 		Max:    C.uint32_t(lim.max),
 	}
@@ -200,6 +201,7 @@ func (self *TableType) GetLimit() *Limit {
 			min:    uint(climit.Min),
 			max:    uint(climit.Max),
 			hasmax: bool(climit.HasMax),
+			shared: bool(climit.Shared),
 		}
 	}
 	return nil
@@ -216,6 +218,7 @@ func (self *TableType) Release() {
 func NewMemoryType(lim *Limit) *MemoryType {
 	climit := C.WasmEdge_Limit{
 		HasMax: C.bool(lim.hasmax),
+		Shared: C.bool(lim.shared),
 		Min:    C.uint32_t(lim.min),
 		Max:    C.uint32_t(lim.max),
 	}
@@ -233,6 +236,7 @@ func (self *MemoryType) GetLimit() *Limit {
 			min:    uint(climit.Min),
 			max:    uint(climit.Max),
 			hasmax: bool(climit.HasMax),
+			shared: bool(climit.Shared),
 		}
 	}
 	return nil
