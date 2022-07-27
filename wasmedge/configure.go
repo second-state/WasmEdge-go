@@ -26,8 +26,14 @@ const (
 type HostRegistration C.enum_WasmEdge_HostRegistration
 
 const (
-	WASI             = HostRegistration(C.WasmEdge_HostRegistration_Wasi)
-	WasmEdge_PROCESS = HostRegistration(C.WasmEdge_HostRegistration_WasmEdge_Process)
+	WASI                        = HostRegistration(C.WasmEdge_HostRegistration_Wasi)
+	WasmEdge_PROCESS            = HostRegistration(C.WasmEdge_HostRegistration_WasmEdge_Process)
+	WasiNN                      = HostRegistration(C.WasmEdge_HostRegistration_WasiNN)
+	WasiCrypto_Common           = HostRegistration(C.WasmEdge_HostRegistration_WasiCrypto_Common)
+	WasiCrypto_AsymmetricCommon = HostRegistration(C.WasmEdge_HostRegistration_WasiCrypto_AsymmetricCommon)
+	WasiCrypto_Kx               = HostRegistration(C.WasmEdge_HostRegistration_WasiCrypto_Kx)
+	WasiCrypto_Signatures       = HostRegistration(C.WasmEdge_HostRegistration_WasiCrypto_Signatures)
+	WasiCrypto_Symmetric        = HostRegistration(C.WasmEdge_HostRegistration_WasiCrypto_Symmetric)
 )
 
 type CompilerOptimizationLevel C.enum_WasmEdge_CompilerOptimizationLevel

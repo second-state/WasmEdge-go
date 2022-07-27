@@ -132,6 +132,54 @@ func (self *Module) WasiGetExitCode() uint {
 	return uint(C.WasmEdge_ModuleInstanceWASIGetExitCode(self._inner))
 }
 
+func NewWasiNNModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiNN()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiCryptoCommonModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoCommon()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiCryptoAsymmetricCommonModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoAsymmetricCommon()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiCryptoKxModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoKx()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiCryptoSignaturesModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoSignatures()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
+func NewWasiCryptoSymmetricModule() *Module {
+	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoSymmetric()
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
 func NewWasmEdgeProcessModule(allowedcmds []string, allowall bool) *Module {
 	ccmds := toCStringArray(allowedcmds)
 	var ptrcmds *(*C.char) = nil
