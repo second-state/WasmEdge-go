@@ -4,14 +4,14 @@ package wasmedge
 #include <wasmedge/wasmedge.h>
 
 typedef void (*wasmedgego_HostFuncWrapper)(void *, void *,
-                                           WasmEdge_MemoryInstanceContext *,
+                                           const WasmEdge_CallingFrameContext *,
                                            const WasmEdge_Value *,
                                            const uint32_t, WasmEdge_Value *,
                                            const uint32_t);
 
 WasmEdge_Result
 wasmedgego_HostFuncInvoke(void *Func, void *Data,
-                          WasmEdge_MemoryInstanceContext *MemCxt,
+                          const WasmEdge_CallingFrameContext *CallFrameCxt,
                           const WasmEdge_Value *Params, const uint32_t ParamLen,
                           WasmEdge_Value *Returns, const uint32_t ReturnLen);
 

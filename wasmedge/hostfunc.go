@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-type hostFunctionSignature func(data interface{}, mem *Memory, params []interface{}) ([]interface{}, Result)
+type hostFunctionSignature func(data interface{}, callframe *CallingFrame, params []interface{}) ([]interface{}, Result)
 
 type hostFunctionManager struct {
 	mu sync.Mutex
@@ -58,10 +58,9 @@ var hostfuncMgr = hostFunctionManager{
 }
 
 //export wasmedgego_HostFuncInvokeImpl
-func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_MemoryInstanceContext, params *C.WasmEdge_Value, paramlen C.uint32_t, returns *C.WasmEdge_Value, returnlen C.uint32_t) C.WasmEdge_Result {
-	gomem := &Memory{
-		_inner: mem,
-		_own:   false,
+func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, callframe *C.WasmEdge_CallingFrameContext, params *C.WasmEdge_Value, paramlen C.uint32_t, returns *C.WasmEdge_Value, returnlen C.uint32_t) C.WasmEdge_Result {
+	gocallgrame := &CallingFrame{
+		_inner: callframe,
 	}
 
 	goparams := make([]interface{}, uint(paramlen))
@@ -80,7 +79,7 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_Mem
 	}
 
 	gofunc, godata := hostfuncMgr.get(uint(fn))
-	goreturns, err := gofunc(godata, gomem, goparams)
+	goreturns, err := gofunc(godata, gocallgrame, goparams)
 
 	var creturns []C.WasmEdge_Value
 	if returnlen > 0 && goreturns != nil {
@@ -95,5 +94,5 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, mem *C.WasmEdge_Mem
 		}
 	}
 
-	return C.WasmEdge_Result{Code: C.uint8_t(err.code)}
+	return C.WasmEdge_Result{Code: C.uint32_t(err.code)}
 }

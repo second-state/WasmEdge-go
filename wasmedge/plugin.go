@@ -4,5 +4,5 @@ package wasmedge
 import "C"
 
 func LoadPluginDefaultPaths() {
-	C.WasmEdge_Plugin_loadWithDefaultPluginPaths()
+	C.WasmEdge_PluginLoadWithDefaultPaths()
 }
