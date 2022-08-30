@@ -38,7 +38,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all -v 0.10.1
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all -v 0.11.0-rc.1
 
     - name: Install the examples
       run: |
@@ -47,13 +47,13 @@ jobs:
     - name: go_WasmAOT
       run: |
         cd wasmedge-go-examples/go_WasmAOT
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         
     - name: go_ReadFile
       run: |
         cd wasmedge-go-examples/go_ReadFile
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wasmedgec rust_readfile.wasm out.wasm
         ./read_file out.wasm file.txt
@@ -61,7 +61,7 @@ jobs:
     - name: go_ExternRef
       run: |
         cd wasmedge-go-examples/go_ExternRef
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wasmedgec funcs.wasm out.wasm
         ./externref out.wasm
@@ -69,7 +69,7 @@ jobs:
     - name: go_AccessMemory
       run: |
         cd wasmedge-go-examples/go_AccessMemory
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build run.go
         wasmedgec rust_access_memory_lib.wasm out.wasm
         ./run out.wasm
@@ -77,7 +77,7 @@ jobs:
     - name: go_AccessMemoryTinyGo
       run: |
         cd wasmedge-go-examples/go_AccessMemoryTinyGo
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build run.go
         wasmedgec fib.wasm out.wasm
         ./run out.wasm
@@ -85,7 +85,7 @@ jobs:
     - name: go_MemoryGreet
       run: |
         cd wasmedge-go-examples/go_MemoryGreet
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build greet_memory.go
         wasmedgec rust_memory_greet_lib.wasm out.wasm
         ./greet_memory out.wasm
@@ -93,7 +93,7 @@ jobs:
     - name: go_MemoryGreetTinyGo
       run: |
         cd wasmedge-go-examples/go_MemoryGreetTinyGo
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build greet_memory.go
         wasmedgec greet.wasm out.wasm
         ./greet_memory out.wasm
@@ -101,7 +101,7 @@ jobs:
     - name: go_BindgenFuncs
       run: |
         cd wasmedge-go-examples/go_BindgenFuncs
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wasmedgec rust_bindgen_funcs_lib_bg.wasm out.wasm
         ./bindgen_funcs out.wasm
@@ -109,7 +109,7 @@ jobs:
     - name: go_BindgenKmeans
       run: |
         cd wasmedge-go-examples/go_BindgenKmeans
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wasmedgec rust_bindgen_kmeans_lib_bg.wasm out.wasm
         ./bindgen_kmeans out.wasm
@@ -117,7 +117,7 @@ jobs:
     - name: go_BindgenWasi
       run: |
         cd wasmedge-go-examples/go_BindgenWasi
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wasmedgec rust_bindgen_wasi_lib_bg.wasm out.wasm
         ./bindgen_wasi out.wasm
@@ -125,7 +125,7 @@ jobs:
     - name: go_Mobilenet
       run: |
         cd wasmedge-go-examples/go_Mobilenet
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         wasmedgec rust_mobilenet_lib_bg.wasm out.wasm
         ./mobilenet out.wasm grace_hopper.jpg
@@ -133,7 +133,7 @@ jobs:
     - name: go_MobilenetBirds
       run: |
         cd wasmedge-go-examples/go_MobilenetBirds
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         wasmedgec rust_mobilenet_birds_lib_bg.wasm out.wasm
         ./mobilenet_birds out.wasm PurpleGallinule.jpg
@@ -141,7 +141,7 @@ jobs:
     - name: go_MobilenetFood
       run: |
         cd wasmedge-go-examples/go_MobilenetFood
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         wasmedgec rust_mobilenet_food_lib_bg.wasm out.wasm
         ./mobilenet_food out.wasm food.jpg
@@ -149,7 +149,7 @@ jobs:
     - name: go_MobilenetInsects
       run: |
         cd wasmedge-go-examples/go_MobilenetInsects
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         wasmedgec rust_mobilenet_insects_lib_bg.wasm out.wasm
         ./mobilenet_insects out.wasm ladybug.jpg
@@ -157,7 +157,7 @@ jobs:
     - name: go_MobilenetPlants
       run: |
         cd wasmedge-go-examples/go_MobilenetPlants
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         wasmedgec rust_mobilenet_plants_lib_bg.wasm out.wasm
         ./mobilenet_plants out.wasm sunflower.jpg
@@ -165,7 +165,7 @@ jobs:
     - name: go_mtcnn
       run: |
         cd wasmedge-go-examples/go_mtcnn
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags image,tensorflow
         wasmedgec rust_mtcnn.wasm out.wasm
         ./mtcnn out.wasm mtcnn.pb solvay.jpg out.jpg
@@ -173,7 +173,7 @@ jobs:
     - name: go_ThreadsMandelbrot
       run: |
         cd wasmedge-go-examples/go_ThreadsMandelbrot
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wget https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/examples/capi/mandelbrot-set-in-threads/mandelbrot.wasm
         ../go_WasmAOT/wasmAOT mandelbrot.wasm out.wasm
@@ -206,7 +206,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all -v 0.10.1
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local -e all -v 0.11.0-rc.1
 
     - name: Install the examples
       run: |
@@ -215,126 +215,126 @@ jobs:
     - name: go_PrintFibonacci
       run: |
         cd wasmedge-go-examples/go_PrintFibonacci
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./print_fibonacci
 
     - name: go_WasmAOT
       run: |
         cd wasmedge-go-examples/go_WasmAOT
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./wasmAOT fibonacci.wasm out.wasm
         
     - name: go_ReadFile
       run: |
         cd wasmedge-go-examples/go_ReadFile
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./read_file rust_readfile.wasm file.txt
         
     - name: go_ExternRef
       run: |
         cd wasmedge-go-examples/go_ExternRef
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./externref funcs.wasm
 
     - name: go_AccessMemory
       run: |
         cd wasmedge-go-examples/go_AccessMemory
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build run.go
         ./run rust_access_memory_lib.wasm
 
     - name: go_AccessMemoryTinyGo
       run: |
         cd wasmedge-go-examples/go_AccessMemoryTinyGo
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build run.go
         ./run fib.wasm
 
     - name: go_MemoryGreet
       run: |
         cd wasmedge-go-examples/go_MemoryGreet
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build greet_memory.go
         ./greet_memory rust_memory_greet_lib.wasm
 
     - name: go_MemoryGreetTinyGo
       run: |
         cd wasmedge-go-examples/go_MemoryGreetTinyGo
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build greet_memory.go
         ./greet_memory greet.wasm
         
     - name: go_BindgenFuncs
       run: |
         cd wasmedge-go-examples/go_BindgenFuncs
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./bindgen_funcs rust_bindgen_funcs_lib_bg.wasm
         
     - name: go_BindgenKmeans
       run: |
         cd wasmedge-go-examples/go_BindgenKmeans
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./bindgen_kmeans rust_bindgen_kmeans_lib_bg.wasm
         
     - name: go_BindgenWasi
       run: |
         cd wasmedge-go-examples/go_BindgenWasi
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         ./bindgen_wasi rust_bindgen_wasi_lib_bg.wasm
 
     - name: go_Mobilenet
       run: |
         cd wasmedge-go-examples/go_Mobilenet
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         ./mobilenet rust_mobilenet_lib_bg.wasm grace_hopper.jpg
 
     - name: go_MobilenetBirds
       run: |
         cd wasmedge-go-examples/go_MobilenetBirds
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         ./mobilenet_birds rust_mobilenet_birds_lib_bg.wasm PurpleGallinule.jpg
 
     - name: go_MobilenetFood
       run: |
         cd wasmedge-go-examples/go_MobilenetFood
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         ./mobilenet_food rust_mobilenet_food_lib_bg.wasm food.jpg
 
     - name: go_MobilenetInsects
       run: |
         cd wasmedge-go-examples/go_MobilenetInsects
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         ./mobilenet_insects rust_mobilenet_insects_lib_bg.wasm ladybug.jpg
 
     - name: go_MobilenetPlants
       run: |
         cd wasmedge-go-examples/go_MobilenetPlants
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags tensorflow
         ./mobilenet_plants rust_mobilenet_plants_lib_bg.wasm sunflower.jpg
 
     - name: go_mtcnn
       run: |
         cd wasmedge-go-examples/go_mtcnn
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build --tags image,tensorflow
         ./mtcnn rust_mtcnn.wasm mtcnn.pb solvay.jpg out.jpg
 
     - name: go_ThreadsMandelbrot
       run: |
         cd wasmedge-go-examples/go_ThreadsMandelbrot
-        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.10.1
+        go get -u github.com/second-state/WasmEdge-go/wasmedge@v0.11.0-rc.1
         go build
         wget https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/examples/capi/mandelbrot-set-in-threads/mandelbrot.wasm
         ./threads mandelbrot.wasm 8
