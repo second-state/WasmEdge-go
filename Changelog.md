@@ -1,8 +1,8 @@
-### v0.11.0-rc.1 (2022-08-31)
+### v0.11.0 (2022-08-31)
 
 Breaking Changes:
 
-* `WasmEdge` updated. Please install the `WasmEdge 0.11.0-rc.1` or newer version.
+* `WasmEdge` updated. Please install the `WasmEdge 0.11.0` or newer version.
 * `CallingFrame` in host functions.
   * The second parameter of host functions are replaced by `CallingFrame`.
   * Developers can use the `(*wasmedge.CallingFrame).GetExecutor()` to get the currently used executor.
@@ -12,7 +12,7 @@ Breaking Changes:
 
 Features:
 
-* Updated to the [WasmEdge 0.11.0-rc.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.0-rc.1).
+* Updated to the [WasmEdge 0.11.0](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.0).
 * Supported user-defined error codes.
   * Developers can use the `wasmedge.NewResult()` API to create and return the result with user-defined error code.
 
