@@ -1,6 +1,5 @@
 package wasmedge
 
-// #include <wasmedge/wasmedge.h>
 import "C"
 
 type ExternType C.enum_WasmEdge_ExternalType
