@@ -1,12 +1,12 @@
-### v0.11.1-rc.1 (2022-10-26)
+### v0.11.1 (2022-10-28)
 
 Breaking Changes:
 
-* `WasmEdge` updated. Please install the `WasmEdge 0.11.1-rc.1` or newer version.
+* `WasmEdge` updated. Please install the `WasmEdge 0.11.1` or newer version.
 
 Features:
 
-* Updated to the [WasmEdge 0.11.1-rc.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.1-rc.1).
+* Updated to the [WasmEdge 0.11.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.1).
 
 ### v0.11.0 (2022-08-31)
 
