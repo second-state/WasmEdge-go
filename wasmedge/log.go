@@ -10,3 +10,7 @@ func SetLogErrorLevel() {
 func SetLogDebugLevel() {
 	C.WasmEdge_LogSetDebugLevel()
 }
+
+func SetLogOff() {
+	C.WasmEdge_LogOff()
+}

@@ -128,6 +128,14 @@ func (self *Configure) GetMaxMemoryPage() uint {
 	return uint(C.WasmEdge_ConfigureGetMaxMemoryPage(self._inner))
 }
 
+func (self *Configure) SetForceInterpreter(isinterpreter bool) {
+	C.WasmEdge_ConfigureSetForceInterpreter(self._inner, C.bool(isinterpreter))
+}
+
+func (self *Configure) IsForceInterpreter() bool {
+	return bool(C.WasmEdge_ConfigureIsForceInterpreter(self._inner))
+}
+
 func (self *Configure) SetCompilerOptimizationLevel(level CompilerOptimizationLevel) {
 	C.WasmEdge_ConfigureCompilerSetOptimizationLevel(self._inner, C.enum_WasmEdge_CompilerOptimizationLevel(level))
 }
