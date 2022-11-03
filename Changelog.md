@@ -1,12 +1,12 @@
-### v0.11.2-rc.1 (2022-10-28)
+### v0.11.2 (2022-11-03)
 
 Breaking Changes:
 
-* `WasmEdge` updated. Please install the `WasmEdge 0.11.1` or newer version.
+* `WasmEdge` updated. Please install the `WasmEdge 0.11.2` or newer version.
 
 Features:
 
-* Updated to the [WasmEdge 0.11.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.1).
+* Updated to the [WasmEdge 0.11.2](https://github.com/WasmEdge/WasmEdge/releases/tag/0.11.2).
 * Added new APIs.
   * Added `wasmedge.SetLogOff()` to turn off the logging.
   * Added `(*wasmedge.Configure).SetForceInterpreter()` to set the forcibly interpreter mode in configuration.
