@@ -60,6 +60,7 @@ func (self *AST) ListImports() []*ImportType {
 			C.WasmEdge_ASTModuleListImports(self._inner, &(cimptype[0]), ltypes)
 		}
 		for i, val := range cimptype {
+			imptype[i] = &ImportType{}
 			imptype[i]._inner = val
 			imptype[i]._ast = self._inner
 			imptype[i]._own = false
@@ -80,6 +81,7 @@ func (self *AST) ListExports() []*ExportType {
 			C.WasmEdge_ASTModuleListExports(self._inner, &(cexptype[0]), ltypes)
 		}
 		for i, val := range cexptype {
+			exptype[i] = &ExportType{}
 			exptype[i]._inner = val
 			exptype[i]._ast = self._inner
 			exptype[i]._own = false
