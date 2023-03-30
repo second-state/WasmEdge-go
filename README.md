@@ -25,8 +25,10 @@ curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/insta
 For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.11.2
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all --dist manylinux2014 -v 0.11.2
 ```
+
+> Due to the compatibility of `Ubuntu 20.04` WasmEdge and `manylinux2014` extensions, please forcibly assign the `manylinux2014` target. We'll fix this issue soon.
 
 Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
 
