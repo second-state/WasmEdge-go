@@ -1,3 +1,40 @@
+### v0.12.0-alpha.2 (2023-03-31)
+
+Breaking Changes:
+
+* `WasmEdge` updated. Please install the `WasmEdge 0.12.0-alpha.2` or newer version.
+* Removed the plug-in related module instance creation functions.
+  * Developers can use the `wasmedge.Plugin` related APIs to find the plug-in and create the module instances.
+  * Removed the `wasmedge.NewWasiNNModule()` API.
+  * Removed the `wasmedge.NewWasiCryptoCommonModule()` API.
+  * Removed the `wasmedge.NewWasiCryptoAsymmetricCommonModule()` API.
+  * Removed the `wasmedge.NewWasiCryptoKxModule()` API.
+  * Removed the `wasmedge.NewWasiCryptoSignaturesModule()` API.
+  * Removed the `wasmedge.NewWasiCryptoSymmetricModule()` API.
+  * Removed the `wasmedge.NewWasmEdgeProcessModule()` API.
+* Removed the plug-in related `wasmedge.HostRegistration` const values.
+  * The `wasmedge.VM` object will automatically load the module instances of the plug-ins.
+  * Removed the `wasmedge.WasmEdge_PROCESS`.
+  * Removed the `wasmedge.WasiNN`.
+  * Removed the `wasmedge.WasiCrypto_Common`.
+  * Removed the `wasmedge.WasiCrypto_AsymmetricCommon`.
+  * Removed the `wasmedge.WasiCrypto_Kx`.
+  * Removed the `wasmedge.WasiCrypto_Signatures`.
+  * Removed the `wasmedge.WasiCrypto_Symmetric`.
+
+Features:
+
+* Updated to the [WasmEdge 0.12.0-alpha.2](https://github.com/WasmEdge/WasmEdge/releases/tag/0.12.0-alpha.2).
+* Added new APIs.
+  * Added the `(*wasmedge.Module).GetName()` API to retrieve the module instance exported name.
+  * Added the plug-in related APIs.
+    * Added the `wasmedge.Plugin` struct.
+    * Added the `wasmedge.LoadPluginFromPath()` API.
+    * Added the `wasmedge.ListPlugins()` API.
+    * Added the `wasmedge.FindPlugin()` API.
+    * Added the `(*wasmedge.Plugin).ListModule()` API.
+    * Added the `(*wasmedge.Plugin).CreateModule()` API.
+
 ### v0.11.2 (2022-11-03)
 
 Breaking Changes:

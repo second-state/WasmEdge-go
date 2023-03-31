@@ -19,13 +19,13 @@ go version go1.16.5 linux/amd64
 Developers must [install the WasmEdge shared library](https://wasmedge.org/book/en/start/install.html) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.11.2
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.12.0-alpha.2
 ```
 
 For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all --dist manylinux2014 -v 0.11.2
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all --dist manylinux2014 -v 0.12.0-alpha.2
 ```
 
 > Due to the compatibility of `Ubuntu 20.04` WasmEdge and `manylinux2014` extensions, please forcibly assign the `manylinux2014` target. We'll fix this issue soon.
@@ -37,7 +37,7 @@ Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` pl
 Install the `WasmEdge-go` package and build in your Go project directory:
 
 ```bash
-go get github.com/second-state/WasmEdge-go/wasmedge@v0.11.2
+go get github.com/second-state/WasmEdge-go/wasmedge@v0.12.0-alpha.2
 go build
 ```
 
