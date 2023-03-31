@@ -420,6 +420,28 @@ func (self *VM) GetActiveModule() *Module {
 	return nil
 }
 
+func (self *VM) GetRegisteredModule(name string) *Module {
+	cname := toWasmEdgeStringWrap(name)
+	ptr := C.WasmEdge_VMGetRegisteredModule(self._inner, cname)
+	if ptr != nil {
+		return &Module{_inner: ptr, _own: false}
+	}
+	return nil
+}
+
+func (self *VM) ListRegisteredModule() []string {
+	modlen := C.WasmEdge_VMListRegisteredModuleLength(self._inner)
+	cnames := make([]C.WasmEdge_String, int(modlen))
+	if int(modlen) > 0 {
+		C.WasmEdge_VMListRegisteredModule(self._inner, &cnames[0], modlen)
+	}
+	names := make([]string, int(modlen))
+	for i := 0; i < int(modlen); i++ {
+		names[i] = fromWasmEdgeString(cnames[i])
+	}
+	return names
+}
+
 func (self *VM) GetStore() *Store {
 	return &Store{_inner: C.WasmEdge_VMGetStoreContext(self._inner), _own: false}
 }

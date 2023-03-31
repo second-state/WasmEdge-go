@@ -3,8 +3,8 @@
 package wasmedge
 
 /*
-#cgo linux LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow -ltensorflow_framework -ltensorflowlite_c
-#cgo darwin LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow -ltensorflow_framework -ltensorflowlite_c
+#cgo linux LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow_cc -ltensorflow_framework -ltensorflowlite_c
+#cgo darwin LDFLAGS: -lwasmedge-tensorflow_c -lwasmedge-tensorflowlite_c -ltensorflow_cc -ltensorflow_framework -ltensorflowlite_c
 
 #include <wasmedge/wasmedge-tensorflow.h>
 #include <wasmedge/wasmedge-tensorflowlite.h>

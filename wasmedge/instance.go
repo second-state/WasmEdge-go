@@ -132,71 +132,6 @@ func (self *Module) WasiGetExitCode() uint {
 	return uint(C.WasmEdge_ModuleInstanceWASIGetExitCode(self._inner))
 }
 
-func NewWasiNNModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiNN()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasiCryptoCommonModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoCommon()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasiCryptoAsymmetricCommonModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoAsymmetricCommon()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasiCryptoKxModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoKx()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasiCryptoSignaturesModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoSignatures()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasiCryptoSymmetricModule() *Module {
-	module := C.WasmEdge_ModuleInstanceCreateWasiCryptoSymmetric()
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
-func NewWasmEdgeProcessModule(allowedcmds []string, allowall bool) *Module {
-	ccmds := toCStringArray(allowedcmds)
-	var ptrcmds *(*C.char) = nil
-	if len(ccmds) > 0 {
-		ptrcmds = &ccmds[0]
-	}
-
-	module := C.WasmEdge_ModuleInstanceCreateWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
-
-	freeCStringArray(ccmds)
-
-	if module == nil {
-		return nil
-	}
-	return &Module{_inner: module, _own: true}
-}
-
 func (self *Module) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
 	ccmds := toCStringArray(allowedcmds)
 	var ptrcmds *(*C.char) = nil
@@ -207,6 +142,11 @@ func (self *Module) InitWasmEdgeProcess(allowedcmds []string, allowall bool) {
 	C.WasmEdge_ModuleInstanceInitWasmEdgeProcess(ptrcmds, C.uint32_t(len(ccmds)), C.bool(allowall))
 
 	freeCStringArray(ccmds)
+}
+
+func (self *Module) GetName() string {
+	cname := C.WasmEdge_ModuleInstanceGetModuleName(self._inner)
+	return fromWasmEdgeString(cname)
 }
 
 func (self *Module) AddFunction(name string, inst *Function) {
