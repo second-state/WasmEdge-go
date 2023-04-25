@@ -1,8 +1,8 @@
-### v0.12.0-alpha.2 (2023-03-31)
+### v0.12.0 (2023-03-25)
 
 Breaking Changes:
 
-* `WasmEdge` updated. Please install the `WasmEdge 0.12.0-alpha.2` or newer version.
+* `WasmEdge` updated. Please install the `WasmEdge 0.12.0` or newer version.
 * Removed the plug-in related module instance creation functions.
   * Developers can use the `wasmedge.Plugin` related APIs to find the plug-in and create the module instances.
   * Removed the `wasmedge.NewWasiNNModule()` API.
@@ -24,7 +24,7 @@ Breaking Changes:
 
 Features:
 
-* Updated to the [WasmEdge 0.12.0-alpha.2](https://github.com/WasmEdge/WasmEdge/releases/tag/0.12.0-alpha.2).
+* Updated to the [WasmEdge 0.12.0](https://github.com/WasmEdge/WasmEdge/releases/tag/0.12.0).
 * Added new APIs.
   * Added the `(*wasmedge.Module).GetName()` API to retrieve the module instance exported name.
   * Added the plug-in related APIs.

@@ -31,7 +31,7 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all --dist manylinux2014 -v 0.12.0-alpha.2
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.12.0
       - name: Build WasmEdge-go without any extensions
         run: |
           source $HOME/.wasmedge/env
@@ -61,7 +61,7 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all --dist manylinux2014 -v 0.12.0-alpha.2
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.12.0
       - name: Build WasmEdge-go without any extensions
         run: |
           source $HOME/.wasmedge/env
