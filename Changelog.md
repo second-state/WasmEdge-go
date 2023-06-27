@@ -1,3 +1,9 @@
+### v0.12.1 (2023-06-28)
+
+Features:
+
+* Updated to the [WasmEdge 0.12.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.12.1).
+
 ### v0.12.0 (2023-03-25)
 
 Breaking Changes:
