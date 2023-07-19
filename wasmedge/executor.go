@@ -70,7 +70,7 @@ func (self *Executor) RegisterImport(store *Store, module *Module) error {
 	return nil
 }
 
-func (self *Executor) Invoke(store *Store, funcinst *Function, params ...interface{}) ([]interface{}, error) {
+func (self *Executor) Invoke(funcinst *Function, params ...interface{}) ([]interface{}, error) {
 	ftype := funcinst.GetFunctionType()
 	cparams := toWasmEdgeValueSlide(params...)
 	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
@@ -90,6 +90,19 @@ func (self *Executor) Invoke(store *Store, funcinst *Function, params ...interfa
 		return nil, newError(res)
 	}
 	return fromWasmEdgeValueSlide(creturns), nil
+}
+
+func (self *Executor) AsyncInvoke(funcinst *Function, params ...interface{}) *Async {
+	cparams := toWasmEdgeValueSlide(params...)
+	var ptrparams *C.WasmEdge_Value = nil
+	if len(cparams) > 0 {
+		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
+	}
+	async := C.WasmEdge_ExecutorAsyncInvoke(self._inner, funcinst._inner, ptrparams, C.uint32_t(len(cparams)))
+	if async == nil {
+		return nil
+	}
+	return &Async{_inner: async, _own: true}
 }
 
 func (self *Executor) Release() {

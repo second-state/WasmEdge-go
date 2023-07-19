@@ -33,4 +33,3 @@ jobs:
         body_path: .CurrentChangelog.md
         draft: true
         prerelease: true
-        

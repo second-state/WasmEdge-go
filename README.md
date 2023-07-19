@@ -16,72 +16,22 @@ $ go version
 go version go1.16.5 linux/amd64
 ```
 
-Developers must [install the WasmEdge shared library](https://wasmedge.org/book/en/start/install.html) with the same `WasmEdge-go` release version.
+Developers must [install the WasmEdge shared library](https://wasmedge.org/docs/start/install) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.12.1
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.0
 ```
 
-For the developers need the `TensorFlow` or `Image` extension for `WasmEdge-go`, please install the `WasmEdge` with extensions:
+For the developers need the `WasmEdge-TensorFlow` or `WasmEdge-Image` plug-ins for `WasmEdge-go`, please install the `WasmEdge` with the corresponding plug-ins:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.12.1
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.0
 ```
 
-Noticed that the `TensorFlow` and `Image` extensions are only for the `Linux` platforms.
-
-**The `TensorFlow` and `Image` extensions for `darwin x86_64` platforms are in the preview stage and unstable now.**
-
-Install the `WasmEdge-go` package and build in your Go project directory:
-
-```bash
-go get github.com/second-state/WasmEdge-go/wasmedge@v0.12.1
-go build
-```
-
-## WasmEdge-go Extensions
-
-By default, the `WasmEdge-go` only turns on the basic runtime.
-
-`WasmEdge-go` has the following extensions:
-
-* Tensorflow
-  * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow), includes both `TensorFlow` and `TensorFlow-Lite`.
-  * The `TensorFlow` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e tensorflow` command.
-  * For using this extension, the tag `tensorflow` when building is required:
-
-    ```bash
-    go build -tags tensorflow
-    ```
-
-* Tensorfloe-Lite
-  * This extension supports the host functions in [WasmEdge-tensorflow](https://github.com/second-state/WasmEdge-tensorflow) with only `TensorFlow-Lite`.
-  * The `TensorFlow` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e tensorflow` command.
-  * For the `aarch64` platforms which only supports `TensorFlow-Lite`, please build with this tag.
-  * **THIS TAG CANNOT BE USED WITH THE `tensorflow` TAG.**
-  * For using this extension, the tag `tensorflowlite` when building is required:
-
-    ```bash
-    go build -tags tensorflowlite
-    ```
-
-* Image
-  * This extension supports the host functions in [WasmEdge-image](https://github.com/second-state/WasmEdge-image).
-  * The `Image` extension when installing `WasmEdge` is required. Please install `WasmEdge` with the `-e image` command.
-  * For using this extension, the tag `image` when building is required:
-
-    ```bash
-    go build -tags image
-    ```
-
-Users can also turn on the multiple extensions when building:
-
-```bash
-go build -tags image,tensorflow
-```
+> Note: Please refer to the [install guide for plug-ins](https://wasmedge.org/docs/start/install/#install-wasmedge-plug-ins-and-dependencies) to check that you've installed the plug-ins with their dependencies.
 
 For examples, please refer to the [example repository](https://github.com/second-state/WasmEdge-go-examples/).
 
 ## WasmEdge-go Documentation
 
-Please refer to the [API Documentation](https://wasmedge.org/book/en/embed/go/ref.html) for details.
+Please refer to the [API Documentation](https://wasmedge.org/docs/embed/go/reference/latest) for details.

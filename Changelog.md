@@ -1,3 +1,19 @@
+### v0.13.0 (2023-07-19)
+
+Breaking Changes:
+
+* Removed the WasmEdge extensions related APIs. Replaced by the corresponding plug-ins.
+  * Removed `wasmedge.NewImageModule()` API.
+  * Removed `wasmedge.NewTensorflowModule()` API.
+  * Removed `wasmedge.NewTensorflowLiteModule()` API.
+* Fixed the `(wasmedge.Executor).Invoke()` API to remove the first `wasmedge.Store` parameter.
+* Added `wasmedge.RunWasmEdgeUnifiedCLI()` API.
+* Added `wasmedge.AsyncInvoke()` API.
+
+Features:
+
+* Updated to the [WasmEdge 0.13.0](https://github.com/WasmEdge/WasmEdge/releases/tag/0.13.0).
+
 ### v0.12.1 (2023-06-28)
 
 Features:

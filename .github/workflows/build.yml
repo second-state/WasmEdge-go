@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.17.x', '1.18.x', '1.19.x' ]
+        go: [ '1.19.x', '1.20.x' ]
     name: Build WasmEdge-go on Ubuntu 20.04 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
@@ -31,25 +31,17 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.12.1
-      - name: Build WasmEdge-go without any extensions
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.13.0
+      - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
-      - name: Build WasmEdge-go with tensorflow and images extensions
-        run: |
-          source $HOME/.wasmedge/env
-          go build -tags image,tensorflow ./wasmedge/
-      - name: Build WasmEdge-go with tensorflowlite and images extensions
-        run: |
-          source $HOME/.wasmedge/env
-          go build -tags image,tensorflowlite ./wasmedge/
 
   build_macos:
     runs-on: macos-11
     strategy:
       matrix:
-        go: [ '1.17.x', '1.18.x', '1.19.x' ]
+        go: [ '1.19.x', '1.20.x' ]
     name: Build WasmEdge-go on MacOS 11 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
@@ -61,16 +53,8 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.12.1
-      - name: Build WasmEdge-go without any extensions
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.13.0
+      - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
-      - name: Build WasmEdge-go with tensorflow and images extensions
-        run: |
-          source $HOME/.wasmedge/env
-          go build -tags image,tensorflow ./wasmedge/
-      - name: Build WasmEdge-go with tensorflowlite and images extensions
-        run: |
-          source $HOME/.wasmedge/env
-          go build -tags image,tensorflowlite ./wasmedge/

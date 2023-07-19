@@ -24,3 +24,14 @@ func RunWasmEdgeCLI(argv []string) int {
 	freeCStringArray(cargv)
 	return int(ret)
 }
+
+func RunWasmEdgeUnifiedCLI(argv []string) int {
+	cargv := toCStringArray(argv)
+	var ptrcargv *(*C.char) = nil
+	if len(cargv) > 0 {
+		ptrcargv = &cargv[0]
+	}
+	ret := C.WasmEdge_Driver_UniTool(C.int(len(cargv)), ptrcargv)
+	freeCStringArray(cargv)
+	return int(ret)
+}
