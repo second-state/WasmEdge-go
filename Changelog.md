@@ -1,3 +1,11 @@
+### v0.13.4 (2023-09-05)
+
+This is the internal fix for WasmEdge.
+
+Features:
+
+* Updated to the [WasmEdge 0.13.4](https://github.com/WasmEdge/WasmEdge/releases/tag/0.13.4).
+
 ### v0.13.3 (2023-09-05)
 
 This is the internal fix for WasmEdge.
