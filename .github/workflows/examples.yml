@@ -38,7 +38,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.4
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.0
 
     - name: Install the examples
       run: |
@@ -205,7 +205,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.4
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.0
 
     - name: Install the examples
       run: |
@@ -280,13 +280,14 @@ jobs:
         go get .
         go build
         ./bindgen_funcs rust_bindgen_funcs_lib.wasm
-        
-    - name: go_BindgenKmeans
-      run: |
-        cd wasmedge-go-examples/go_BindgenKmeans
-        go get .
-        go build
-        ./bindgen_kmeans rust_bindgen_kmeans_lib.wasm
+
+    # Not to run this example in interpreter mode to reduce CI time.   
+    #- name: go_BindgenKmeans
+    #  run: |
+    #    cd wasmedge-go-examples/go_BindgenKmeans
+    #    go get .
+    #    go build
+    #    ./bindgen_kmeans rust_bindgen_kmeans_lib.wasm
         
     - name: go_BindgenWasi
       run: |
