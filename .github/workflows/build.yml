@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.19.x', '1.20.x' ]
+        go: [ '1.22.x', '1.23.x' ]
     name: Build WasmEdge-go on Ubuntu 20.04 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
@@ -31,18 +31,18 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.13.0
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4
       - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
 
   build_macos:
-    runs-on: macos-11
+    runs-on: macos-14
     strategy:
       matrix:
-        go: [ '1.19.x', '1.20.x' ]
-    name: Build WasmEdge-go on MacOS 11 x86_64 with Go ${{ matrix.go }}
+        go: [ '1.22.x', '1.23.x' ]
+    name: Build WasmEdge-go on MacOS 14 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
       - name: Install go
@@ -53,7 +53,7 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -e all -v 0.13.0
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4
       - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
