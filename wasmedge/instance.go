@@ -26,6 +26,14 @@ uint32_t wasmedgego_WrapListExport(wasmedgego_GetExport F,
                                    WasmEdge_String *Names, const uint32_t Len) {
   return F(Cxt, Names, Len);
 }
+
+WasmEdge_FunctionInstanceContext *
+wasmedgego_FunctionInstanceCreateBindingWrapper(
+    const WasmEdge_FunctionTypeContext *Type, WasmEdge_WrapFunc_t WrapFunc,
+    uintptr_t Binding, void *Data, const uint64_t Cost) {
+  return WasmEdge_FunctionInstanceCreateBinding(Type, WrapFunc, (void *)Binding,
+                                                Data, Cost);
+}
 */
 import "C"
 import (
@@ -268,10 +276,10 @@ func NewFunction(ftype *FunctionType, fn hostFunctionSignature, additional inter
 	}
 
 	index := hostfuncMgr.add(fn, additional)
-	function := C.WasmEdge_FunctionInstanceCreateBinding(
+	function := C.wasmedgego_FunctionInstanceCreateBindingWrapper(
 		ftype._inner,
 		C.wasmedgego_HostFuncWrapper(C.wasmedgego_HostFuncInvoke),
-		unsafe.Pointer(uintptr(index)),
+		C.uintptr_t(index),
 		nil,
 		C.uint64_t(cost))
 	if function == nil {
