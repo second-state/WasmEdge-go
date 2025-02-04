@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.19.x', '1.20.x' ]
+        go: [ '1.22.x', '1.23.x' ]
     name: Run WasmEdge-go-examples in AOT mode with Go ${{ matrix.go }}
 
     steps:
@@ -38,7 +38,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.0
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.4
 
     - name: Install the examples
       run: |
@@ -184,7 +184,7 @@ jobs:
     
     strategy:
       matrix:
-        go: [ '1.19.x', '1.20.x' ]
+        go: [ '1.22.x', '1.23.x' ]
     name: Run WasmEdge-go-examples in interpreter mode with Go ${{ matrix.go }}
 
     steps:
@@ -205,7 +205,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.0
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.4
 
     - name: Install the examples
       run: |
