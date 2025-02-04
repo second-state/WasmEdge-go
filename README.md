@@ -8,24 +8,24 @@ The [WasmEdge](https://github.com/WasmEdge/WasmEdge) is a high performance WebAs
 
 ## Getting Started
 
-The `WasmEdge-go` requires `golang` version >= `1.16`. Please check your `golang` version before installation.
+The `WasmEdge-go` requires `golang` version >= `1.22`. Please check your `golang` version before installation.
 Developers can [download golang here](https://golang.org/dl/).
 
 ```bash
 $ go version
-go version go1.16.5 linux/amd64
+go version go1.23.1 linux/amd64
 ```
 
 Developers must [install the WasmEdge shared library](https://wasmedge.org/docs/start/install) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.5
 ```
 
 For the developers need the `WasmEdge-TensorFlow` or `WasmEdge-Image` plug-ins for `WasmEdge-go`, please install the `WasmEdge` with the corresponding plug-ins:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.4
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.13.5
 ```
 
 > Note: Please refer to the [install guide for plug-ins](https://wasmedge.org/docs/start/install/#install-wasmedge-plug-ins-and-dependencies) to check that you've installed the plug-ins with their dependencies.
