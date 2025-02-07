@@ -71,7 +71,8 @@ func (self *VM) RegisterWasmFile(modname string, path string) error {
 
 func (self *VM) RegisterWasmBuffer(modname string, buf []byte) error {
 	modstr := toWasmEdgeStringWrap(modname)
-	res := C.WasmEdge_VMRegisterModuleFromBuffer(self._inner, modstr, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMRegisterModuleFromBytes(self._inner, modstr, cbytes)
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -118,7 +119,8 @@ func (self *VM) RunWasmFile(path string, funcname string, params ...interface{})
 }
 
 func (self *VM) RunWasmBuffer(buf []byte, funcname string, params ...interface{}) ([]interface{}, error) {
-	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMLoadWasmFromBytes(self._inner, cbytes)
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
@@ -157,9 +159,8 @@ func (self *VM) AsyncRunWasmBuffer(buf []byte, funcname string, params ...interf
 	if len(cparams) > 0 {
 		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
 	}
-	async := C.WasmEdge_VMAsyncRunWasmFromBuffer(
-		self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)),
-		funcstr, ptrparams, C.uint32_t(len(cparams)))
+	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	async := C.WasmEdge_VMAsyncRunWasmFromBytes(self._inner, cbytes, funcstr, ptrparams, C.uint32_t(len(cparams)))
 	if async == nil {
 		return nil
 	}
@@ -192,7 +193,8 @@ func (self *VM) LoadWasmFile(path string) error {
 }
 
 func (self *VM) LoadWasmBuffer(buf []byte) error {
-	res := C.WasmEdge_VMLoadWasmFromBuffer(self._inner, (*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	res := C.WasmEdge_VMLoadWasmFromBytes(self._inner, cbytes)
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}

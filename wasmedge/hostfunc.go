@@ -72,7 +72,7 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, callframe *C.WasmEd
 		sliceHeader.Data = uintptr(unsafe.Pointer(params))
 		for i := 0; i < int(paramlen); i++ {
 			goparams[i] = fromWasmEdgeValue(cparams[i])
-			if cparams[i].Type == C.WasmEdge_ValType_ExternRef && !goparams[i].(ExternRef)._valid {
+			if C.WasmEdge_ValTypeIsExternRef(cparams[i].Type) == true && !goparams[i].(ExternRef)._valid {
 				panic("External reference is released")
 			}
 		}

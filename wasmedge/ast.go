@@ -10,6 +10,7 @@ const (
 	ExternType_Table    = ExternType(C.WasmEdge_ExternalType_Table)
 	ExternType_Memory   = ExternType(C.WasmEdge_ExternalType_Memory)
 	ExternType_Global   = ExternType(C.WasmEdge_ExternalType_Global)
+	ExternType_Tag      = ExternType(C.WasmEdge_ExternalType_Tag)
 )
 
 type AST struct {
@@ -29,6 +30,11 @@ type TableType struct {
 
 type MemoryType struct {
 	_inner *C.WasmEdge_MemoryTypeContext
+	_own   bool
+}
+
+type TagType struct {
+	_inner *C.WasmEdge_TagTypeContext
 	_own   bool
 }
 
@@ -99,17 +105,17 @@ func (self *AST) Release() {
 	self._own = false
 }
 
-func NewFunctionType(params []ValType, returns []ValType) *FunctionType {
-	var cparams = make([]C.enum_WasmEdge_ValType, len(params))
-	var creturns = make([]C.enum_WasmEdge_ValType, len(returns))
+func NewFunctionType(params []*ValType, returns []*ValType) *FunctionType {
+	var cparams = make([]C.WasmEdge_ValType, len(params))
+	var creturns = make([]C.WasmEdge_ValType, len(returns))
 	for i, t := range params {
-		cparams[i] = C.enum_WasmEdge_ValType(t)
+		cparams[i] = t._inner
 	}
 	for i, t := range returns {
-		creturns[i] = C.enum_WasmEdge_ValType(t)
+		creturns[i] = t._inner
 	}
-	var ptrparams *C.enum_WasmEdge_ValType = nil
-	var ptrreturns *C.enum_WasmEdge_ValType = nil
+	var ptrparams *C.WasmEdge_ValType = nil
+	var ptrreturns *C.WasmEdge_ValType = nil
 	if len(params) > 0 {
 		ptrparams = &(cparams[0])
 	}
@@ -129,20 +135,20 @@ func (self *FunctionType) GetParametersLength() uint {
 	return uint(C.WasmEdge_FunctionTypeGetParametersLength(self._inner))
 }
 
-func (self *FunctionType) GetParameters() []ValType {
+func (self *FunctionType) GetParameters() []*ValType {
 	if self._inner != nil {
-		var valtype []ValType
-		var cvaltype []C.enum_WasmEdge_ValType
+		var valtype []*ValType
+		var cvaltype []C.WasmEdge_ValType
 		ltypes := C.WasmEdge_FunctionTypeGetParametersLength(self._inner)
 		if uint(ltypes) > 0 {
-			valtype = make([]ValType, uint(ltypes))
-			cvaltype = make([]C.enum_WasmEdge_ValType, uint(ltypes))
+			valtype = make([]*ValType, uint(ltypes))
+			cvaltype = make([]C.WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetParameters(self._inner, &(cvaltype[0]), ltypes)
+			for i, val := range cvaltype {
+				valtype[i]._inner = val
+			}
+			return valtype
 		}
-		for i, val := range cvaltype {
-			valtype[i] = ValType(val)
-		}
-		return valtype
 	}
 	return nil
 }
@@ -151,20 +157,20 @@ func (self *FunctionType) GetReturnsLength() uint {
 	return uint(C.WasmEdge_FunctionTypeGetReturnsLength(self._inner))
 }
 
-func (self *FunctionType) GetReturns() []ValType {
+func (self *FunctionType) GetReturns() []*ValType {
 	if self._inner != nil {
-		var valtype []ValType
-		var cvaltype []C.enum_WasmEdge_ValType
+		var valtype []*ValType
+		var cvaltype []C.WasmEdge_ValType
 		ltypes := C.WasmEdge_FunctionTypeGetReturnsLength(self._inner)
 		if uint(ltypes) > 0 {
-			valtype = make([]ValType, uint(ltypes))
-			cvaltype = make([]C.enum_WasmEdge_ValType, uint(ltypes))
+			valtype = make([]*ValType, uint(ltypes))
+			cvaltype = make([]C.WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetReturns(self._inner, &(cvaltype[0]), ltypes)
+			for i, val := range cvaltype {
+				valtype[i]._inner = val
+			}
+			return valtype
 		}
-		for i, val := range cvaltype {
-			valtype[i] = ValType(val)
-		}
-		return valtype
 	}
 	return nil
 }
@@ -177,23 +183,22 @@ func (self *FunctionType) Release() {
 	self._own = false
 }
 
-func NewTableType(rtype RefType, lim *Limit) *TableType {
-	crtype := C.enum_WasmEdge_RefType(rtype)
+func NewTableType(rtype *ValType, lim *Limit) *TableType {
 	climit := C.WasmEdge_Limit{
 		HasMax: C.bool(lim.hasmax),
 		Shared: C.bool(lim.shared),
 		Min:    C.uint32_t(lim.min),
 		Max:    C.uint32_t(lim.max),
 	}
-	ttype := C.WasmEdge_TableTypeCreate(crtype, climit)
+	ttype := C.WasmEdge_TableTypeCreate(rtype._inner, climit)
 	if ttype == nil {
 		return nil
 	}
 	return &TableType{_inner: ttype, _own: true}
 }
 
-func (self *TableType) GetRefType() RefType {
-	return RefType(C.WasmEdge_TableTypeGetRefType(self._inner))
+func (self *TableType) GetRefType() *ValType {
+	return &ValType{_inner: C.WasmEdge_TableTypeGetRefType(self._inner)}
 }
 
 func (self *TableType) GetLimit() *Limit {
@@ -252,18 +257,25 @@ func (self *MemoryType) Release() {
 	self._own = false
 }
 
-func NewGlobalType(vtype ValType, vmut ValMut) *GlobalType {
-	cvtype := C.enum_WasmEdge_ValType(vtype)
+func (self *TagType) GetFunctionType() *FunctionType {
+	ftype := C.WasmEdge_TagTypeGetFunctionType(self._inner)
+	if ftype == nil {
+		return nil
+	}
+	return &FunctionType{_inner: ftype, _own: false}
+}
+
+func NewGlobalType(vtype *ValType, vmut ValMut) *GlobalType {
 	cvmut := C.enum_WasmEdge_Mutability(vmut)
-	gtype := C.WasmEdge_GlobalTypeCreate(cvtype, cvmut)
+	gtype := C.WasmEdge_GlobalTypeCreate(vtype._inner, cvmut)
 	if gtype == nil {
 		return nil
 	}
 	return &GlobalType{_inner: gtype, _own: true}
 }
 
-func (self *GlobalType) GetValType() ValType {
-	return ValType(C.WasmEdge_GlobalTypeGetValType(self._inner))
+func (self *GlobalType) GetValType() *ValType {
+	return &ValType{_inner: C.WasmEdge_GlobalTypeGetValType(self._inner)}
 }
 
 func (self *GlobalType) GetMutability() ValMut {
@@ -315,6 +327,11 @@ func (self *ImportType) GetExternalValue() interface{} {
 			_inner: C.WasmEdge_ImportTypeGetGlobalType(self._ast, self._inner),
 			_own:   false,
 		}
+	case ExternType_Tag:
+		return &TagType{
+			_inner: C.WasmEdge_ImportTypeGetTagType(self._ast, self._inner),
+			_own:   false,
+		}
 	}
 	panic("Unknown external type")
 }
@@ -350,6 +367,11 @@ func (self *ExportType) GetExternalValue() interface{} {
 	case ExternType_Global:
 		return &GlobalType{
 			_inner: C.WasmEdge_ExportTypeGetGlobalType(self._ast, self._inner),
+			_own:   false,
+		}
+	case ExternType_Tag:
+		return &TagType{
+			_inner: C.WasmEdge_ExportTypeGetTagType(self._ast, self._inner),
 			_own:   false,
 		}
 	}

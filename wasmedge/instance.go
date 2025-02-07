@@ -64,6 +64,11 @@ type Memory struct {
 	_own   bool
 }
 
+type Tag struct {
+	_inner *C.WasmEdge_TagInstanceContext
+	_own   bool
+}
+
 type Global struct {
 	_inner *C.WasmEdge_GlobalInstanceContext
 	_own   bool
@@ -221,6 +226,15 @@ func (self *Module) FindMemory(name string) *Memory {
 	return &Memory{_inner: cinst, _own: false}
 }
 
+func (self *Module) FindTag(name string) *Tag {
+	cname := toWasmEdgeStringWrap(name)
+	cinst := C.WasmEdge_ModuleInstanceFindTag(self._inner, cname)
+	if cinst == nil {
+		return nil
+	}
+	return &Tag{_inner: cinst, _own: false}
+}
+
 func (self *Module) FindGlobal(name string) *Global {
 	cname := toWasmEdgeStringWrap(name)
 	cinst := C.WasmEdge_ModuleInstanceFindGlobal(self._inner, cname)
@@ -248,6 +262,13 @@ func (self *Module) ListMemory() []string {
 	return self.getExports(
 		C.WasmEdge_ModuleInstanceListMemoryLength(self._inner),
 		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListMemory),
+	)
+}
+
+func (self *Module) ListTag() []string {
+	return self.getExports(
+		C.WasmEdge_ModuleInstanceListTagLength(self._inner),
+		C.wasmedgego_GetExport(C.WasmEdge_ModuleInstanceListTag),
 	)
 }
 
@@ -425,6 +446,13 @@ func (self *Memory) Release() {
 	self._own = false
 }
 
+func (self *Tag) GetTagType() *TagType {
+	return &TagType{
+		_inner: C.WasmEdge_TagInstanceGetTagType(self._inner),
+		_own:   false,
+	}
+}
+
 func NewGlobal(gtype *GlobalType, val interface{}) *Global {
 	if gtype == nil {
 		return nil
@@ -449,8 +477,12 @@ func (self *Global) GetValue() interface{} {
 	return fromWasmEdgeValue(cval)
 }
 
-func (self *Global) SetValue(val interface{}) {
-	C.WasmEdge_GlobalInstanceSetValue(self._inner, toWasmEdgeValue(val))
+func (self *Global) SetValue(val interface{}) error {
+	res := C.WasmEdge_GlobalInstanceSetValue(self._inner, toWasmEdgeValue(val))
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
 }
 
 func (self *Global) Release() {

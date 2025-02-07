@@ -40,6 +40,17 @@ func (self *Compiler) Compile(inpath string, outpath string) error {
 	return nil
 }
 
+func (self *Compiler) CompileBuffer(buf []byte, outpath string) (error) {
+	coutpath := C.CString(outpath)
+	defer C.free(unsafe.Pointer(coutpath))
+	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))
+	res := C.WasmEdge_CompilerCompileFromBytes(self._inner, cbytes, coutpath)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
+}
+
 func (self *Compiler) Release() {
 	if self._own {
 		C.WasmEdge_CompilerDelete(self._inner)
