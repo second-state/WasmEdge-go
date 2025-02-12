@@ -16,11 +16,11 @@ on:
 
 jobs:
   build_ubuntu:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         go: [ '1.22.x', '1.23.x' ]
-    name: Build WasmEdge-go on Ubuntu 20.04 x86_64 with Go ${{ matrix.go }}
+    name: Build WasmEdge-go on Ubuntu 24.04 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v2
       - name: Install go
