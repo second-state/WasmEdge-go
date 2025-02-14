@@ -179,7 +179,7 @@ jobs:
         ./mtcnn out.wasm mtcnn.pb solvay.jpg out.jpg
 
   build_interpreter:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: build_aot
     
     strategy:
