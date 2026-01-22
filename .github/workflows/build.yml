@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
-    name: Build WasmEdge-go on Ubuntu 24.04 x86_64 with Go ${{ matrix.go }}
+        go: [ '1.24.x', '1.25.x' ]
+    name: Build WasmEdge-go on Ubuntu 24.04 with Go ${{ matrix.go }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: Install go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Check go version
@@ -38,15 +38,15 @@ jobs:
           go build ./wasmedge/
 
   build_macos:
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
-    name: Build WasmEdge-go on MacOS 14 x86_64 with Go ${{ matrix.go }}
+        go: [ '1.24.x', '1.25.x' ]
+    name: Build WasmEdge-go on MacOS with Go ${{ matrix.go }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: Install go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Check go version
