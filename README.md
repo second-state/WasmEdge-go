@@ -35,3 +35,27 @@ For examples, please refer to the [example repository](https://github.com/second
 ## WasmEdge-go Documentation
 
 Please refer to the [API Documentation](https://wasmedge.org/docs/embed/go/reference/latest) for details.
+
+## Bazel Support on Windows
+
+To use this library with Bazel on Windows, you can define the WasmEdge C library as a local dependency. Below is an example of how to configure this in your project.
+
+### Example Configuration
+
+```starlark
+load("@bazel_tools//tools/build_defs/cc:cc_import.bzl", "cc_import")
+
+cc_import(
+    name = "libwasmedge",
+    shared_library = "C:/wasmedge/bin/wasmedge.dll",
+    interface_library = "C:/wasmedge/lib/wasmedge.lib",
+    system_provided = False,
+)
+
+cc_library(
+    name = "wasmedge_c",
+    hdrs = [":wasmedge_headers"],
+    deps = [":libwasmedge"],
+    includes = ["C:/wasmedge/include"],
+    visibility = ["//visibility:public"],
+)
