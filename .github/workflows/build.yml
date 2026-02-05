@@ -17,14 +17,51 @@ on:
 jobs:
   build_ubuntu:
     runs-on: ubuntu-24.04
+    env:
+      CGO_ENABLED: 1
+      USE_BAZEL_VERSION: 7.4.1
     strategy:
       matrix:
         go: [ '1.22.x', '1.23.x' ]
     name: Build WasmEdge-go on Ubuntu 24.04 x86_64 with Go ${{ matrix.go }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: Install go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Check go version
+        run: go version
+      - name: Install wasmedge
+        run: |
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
+      - name: Build WasmEdge-go
+        run: |
+          source $HOME/.wasmedge/env
+          go build ./wasmedge/
+      - name: Bazel Test
+        run: |
+          bazel test //... \
+            --test_output=errors \
+            --copt="-I$HOME/.wasmedge/include" \
+            --linkopt="-L$HOME/.wasmedge/lib" \
+            --action_env=LD_LIBRARY_PATH=$HOME/.wasmedge/lib \
+            --action_env=DYLD_LIBRARY_PATH=$HOME/.wasmedge/lib \
+            --@io_bazel_rules_go//go/config:pure=false
+
+  build_macos:
+    runs-on: macos-14
+    env:
+      CGO_ENABLED: 1
+      USE_BAZEL_VERSION: 7.4.1
+    strategy:
+      matrix:
+        go: [ '1.22.x', '1.23.x' ]
+    name: Build WasmEdge-go on MacOS 14 x86_64 with Go ${{ matrix.go }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install go
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Check go version
@@ -37,24 +74,12 @@ jobs:
           source $HOME/.wasmedge/env
           go build ./wasmedge/
 
-  build_macos:
-    runs-on: macos-14
-    strategy:
-      matrix:
-        go: [ '1.22.x', '1.23.x' ]
-    name: Build WasmEdge-go on MacOS 14 x86_64 with Go ${{ matrix.go }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Check go version
-        run: go version
-      - name: Install wasmedge
+      - name: Bazel Test
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
-      - name: Build WasmEdge-go
-        run: |
-          source $HOME/.wasmedge/env
-          go build ./wasmedge/
+          bazel test //... \
+            --test_output=errors \
+            --copt="-I$HOME/.wasmedge/include" \
+            --linkopt="-L$HOME/.wasmedge/lib" \
+            --action_env=LD_LIBRARY_PATH=$HOME/.wasmedge/lib \
+            --action_env=DYLD_LIBRARY_PATH=$HOME/.wasmedge/lib \
+            --@io_bazel_rules_go//go/config:pure=false

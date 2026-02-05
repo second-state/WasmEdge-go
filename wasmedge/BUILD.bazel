@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ast.go",
+        "async.go",
+        "callframe.go",
+        "cgo.go",
+        "chostfunc.go",
+        "cli.go",
+        "compiler.go",
+        "configure.go",
+        "executor.go",
+        "hostfunc.go",
+        "instance.go",
+        "limit.go",
+        "loader.go",
+        "log.go",
+        "plugin.go",
+        "result.go",
+        "statistics.go",
+        "store.go",
+        "string.go",
+        "validator.go",
+        "value.go",
+        "version.go",
+        "vm.go",
+    ],
+    cgo = True,
+    clinkopts = ["-lwasmedge"],
+    importpath = "github.com/second-state/WasmEdge-go/wasmedge",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["limit_test.go"],
+    embed = [":go_default_library"],
+)
