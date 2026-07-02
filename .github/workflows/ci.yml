@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  WASMEDGE_VERSION: "0.17.0"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+        go: ["1.24", "stable"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Install WasmEdge
+        run: |
+          curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh \
+            | bash -s -- -v ${WASMEDGE_VERSION}
+
+      - name: Build
+        run: |
+          source $HOME/.wasmedge/env
+          go build ./...
+
+      - name: Vet
+        run: |
+          source $HOME/.wasmedge/env
+          go vet ./...
+
+      - name: Test (race)
+        run: |
+          source $HOME/.wasmedge/env
+          go test -race ./...
+
+      - name: Test (leak diagnostics)
+        run: |
+          source $HOME/.wasmedge/env
+          go test -tags wasmedge_debug ./...
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install WasmEdge
+        run: |
+          curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh \
+            | bash -s -- -v ${WASMEDGE_VERSION}
+      - name: golangci-lint
+        run: |
+          source $HOME/.wasmedge/env
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+          golangci-lint run

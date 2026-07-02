@@ -72,24 +72,24 @@ const (
 type Proposal uint32
 
 const (
-	ProposalImportExportMutGlobals        Proposal = C.WasmEdge_Proposal_ImportExportMutGlobals
-	ProposalNonTrapFloatToIntConversions  Proposal = C.WasmEdge_Proposal_NonTrapFloatToIntConversions
-	ProposalSignExtensionOperators        Proposal = C.WasmEdge_Proposal_SignExtensionOperators
-	ProposalMultiValue                    Proposal = C.WasmEdge_Proposal_MultiValue
-	ProposalBulkMemoryOperations          Proposal = C.WasmEdge_Proposal_BulkMemoryOperations
-	ProposalReferenceTypes                Proposal = C.WasmEdge_Proposal_ReferenceTypes
-	ProposalSIMD                          Proposal = C.WasmEdge_Proposal_SIMD
-	ProposalTailCall                      Proposal = C.WasmEdge_Proposal_TailCall
-	ProposalExtendedConst                 Proposal = C.WasmEdge_Proposal_ExtendedConst
-	ProposalFunctionReferences            Proposal = C.WasmEdge_Proposal_FunctionReferences
-	ProposalGC                            Proposal = C.WasmEdge_Proposal_GC
-	ProposalMultiMemories                 Proposal = C.WasmEdge_Proposal_MultiMemories
-	ProposalRelaxSIMD                     Proposal = C.WasmEdge_Proposal_RelaxSIMD
-	ProposalAnnotations                   Proposal = C.WasmEdge_Proposal_Annotations
-	ProposalExceptionHandling             Proposal = C.WasmEdge_Proposal_ExceptionHandling
-	ProposalMemory64                      Proposal = C.WasmEdge_Proposal_Memory64
-	ProposalThreads                       Proposal = C.WasmEdge_Proposal_Threads
-	ProposalComponent                     Proposal = C.WasmEdge_Proposal_Component
+	ProposalImportExportMutGlobals       Proposal = C.WasmEdge_Proposal_ImportExportMutGlobals
+	ProposalNonTrapFloatToIntConversions Proposal = C.WasmEdge_Proposal_NonTrapFloatToIntConversions
+	ProposalSignExtensionOperators       Proposal = C.WasmEdge_Proposal_SignExtensionOperators
+	ProposalMultiValue                   Proposal = C.WasmEdge_Proposal_MultiValue
+	ProposalBulkMemoryOperations         Proposal = C.WasmEdge_Proposal_BulkMemoryOperations
+	ProposalReferenceTypes               Proposal = C.WasmEdge_Proposal_ReferenceTypes
+	ProposalSIMD                         Proposal = C.WasmEdge_Proposal_SIMD
+	ProposalTailCall                     Proposal = C.WasmEdge_Proposal_TailCall
+	ProposalExtendedConst                Proposal = C.WasmEdge_Proposal_ExtendedConst
+	ProposalFunctionReferences           Proposal = C.WasmEdge_Proposal_FunctionReferences
+	ProposalGC                           Proposal = C.WasmEdge_Proposal_GC
+	ProposalMultiMemories                Proposal = C.WasmEdge_Proposal_MultiMemories
+	ProposalRelaxSIMD                    Proposal = C.WasmEdge_Proposal_RelaxSIMD
+	ProposalAnnotations                  Proposal = C.WasmEdge_Proposal_Annotations
+	ProposalExceptionHandling            Proposal = C.WasmEdge_Proposal_ExceptionHandling
+	ProposalMemory64                     Proposal = C.WasmEdge_Proposal_Memory64
+	ProposalThreads                      Proposal = C.WasmEdge_Proposal_Threads
+	ProposalComponent                    Proposal = C.WasmEdge_Proposal_Component
 )
 
 // RunMode selects the execution engine. The zero value (interpreter) is the

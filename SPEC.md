@@ -342,10 +342,11 @@ instance (borrowed) for `InitWASI`-style reconfiguration.
   `FindPlugin(name) *Plugin`, `(*Plugin).ModuleNames()`,
   `(*Plugin).CreateModule(name) (*Module, error)`,
   `InitWASINN(preloads ...string)`.
-- Logging: `SetLogLevel(LevelError)`, `SetLogOff()`, and
-  `SetLogHandler(*slog.Logger)` bridging `WasmEdge_LogSetCallback` — engine
-  logs become structured Go logs (single global callback trampoline, same
-  panic-containment rules as host functions).
+- Logging: `SetLogLevel(LogLevelError)`, `SetLogOff()`,
+  `SetLogCallback(func(LogMessage))` bridging `WasmEdge_LogSetCallback`,
+  plus `RouteLogsToSlog(*slog.Logger)` — engine logs become structured Go
+  logs (single global callback trampoline, same panic-containment rules as
+  host functions).
 - `Compiler`: `NewCompiler(cfg)`, `CompileFile(in, out)`,
   `CompileBytes(b, out)`.
 - Driver entry points: `DriverCompiler(args)`, `DriverTool(args)`,

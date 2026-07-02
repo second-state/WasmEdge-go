@@ -1,61 +1,100 @@
-# WasmEdge for Go Package
+# WasmEdge-go
 
-The [WasmEdge](https://github.com/WasmEdge/WasmEdge) is a high performance WebAssembly runtime optimized for server side applications. This project provides a [golang](https://golang.org/) package for accessing to WasmEdge.
+Go bindings for the [WasmEdge](https://github.com/WasmEdge/WasmEdge) runtime.
 
-* For a complete tutorial, please read the article [Extend Your Golang App with Embedded WebAssembly Functions in WasmEdge](https://www.secondstate.io/articles/extend-golang-app-with-webassembly-rust/), which demonstrates how to embed a Wasm function and how to embed a full Wasm program from the Golang app.
-* WasmEdge in real-time data strems: [AI Inference for Real-time Data Streams with WasmEdge and YoMo](https://www.secondstate.io/articles/yomo-wasmedge-real-time-data-streams/)
-* For more examples, please go to the [WasmEdge-go-examples repo](https://github.com/second-state/WasmEdge-go-examples). Contributing your own example is much appreciated.
+> **v2 status: scaffolding complete, pre-alpha.** This branch is the ground-up
+> redesign for the WasmEdge 0.17 C API. The design is in [SPEC.md](SPEC.md),
+> the remaining work (including mentored starter tasks) in [PLAN.md](PLAN.md),
+> and the v1 → v2 symbol mapping in [docs/MIGRATION.md](docs/MIGRATION.md).
+> v1 (`github.com/second-state/WasmEdge-go/wasmedge`) remains importable via
+> Go module versioning.
 
-## Getting Started
+## Requirements
 
-The `WasmEdge-go` requires `golang` version >= `1.22`. Please check your `golang` version before installation.
-Developers can [download golang here](https://golang.org/dl/).
-
-```bash
-$ go version
-go version go1.23.1 linux/amd64
-```
-
-Developers must [install the WasmEdge shared library](https://wasmedge.org/docs/start/install) with the same `WasmEdge-go` release version.
+- Go ≥ 1.24
+- WasmEdge shared library ≥ 0.17.0
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh \
+  | bash -s -- -v 0.17.0
+source $HOME/.wasmedge/env
 ```
 
-For the developers need the `WasmEdge-TensorFlow` or `WasmEdge-Image` plug-ins for `WasmEdge-go`, please install the `WasmEdge` with the corresponding plug-ins:
+## Quick start
 
-```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.14.0
-```
+```go
+package main
 
-> Note: Please refer to the [install guide for plug-ins](https://wasmedge.org/docs/start/install/#install-wasmedge-plug-ins-and-dependencies) to check that you've installed the plug-ins with their dependencies.
+import (
+	"fmt"
+	"log"
 
-For examples, please refer to the [example repository](https://github.com/second-state/WasmEdge-go-examples/).
-
-## WasmEdge-go Documentation
-
-Please refer to the [API Documentation](https://wasmedge.org/docs/embed/go/reference/latest) for details.
-
-## Bazel Support on Windows
-
-To use this library with Bazel on Windows, you can define the WasmEdge C library as a local dependency. Below is an example of how to configure this in your project.
-
-### Example Configuration
-
-```starlark
-load("@bazel_tools//tools/build_defs/cc:cc_import.bzl", "cc_import")
-
-cc_import(
-    name = "libwasmedge",
-    shared_library = "C:/wasmedge/bin/wasmedge.dll",
-    interface_library = "C:/wasmedge/lib/wasmedge.lib",
-    system_provided = False,
+	wasmedge "github.com/second-state/WasmEdge-go/v2"
 )
 
-cc_library(
-    name = "wasmedge_c",
-    hdrs = [":wasmedge_headers"],
-    deps = [":libwasmedge"],
-    includes = ["C:/wasmedge/include"],
-    visibility = ["//visibility:public"],
-)
+func main() {
+	vm, err := wasmedge.NewVM(&wasmedge.Config{WASI: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vm.Close()
+
+	out, err := vm.RunBytes(wasmBytes, "fib", wasmedge.I32(21))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(out[0].I32()) // 17711
+}
+```
+
+Host functions are plain Go functions:
+
+```go
+env := wasmedge.NewModule("env")
+defer env.Close()
+env.AddFunction("add", wasmedge.MustWrapFunc(func(a, b int32) int32 { return a + b }))
+vm.RegisterImport(env)
+```
+
+Cancellation and timeouts use `context.Context`:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+defer cancel()
+out, err := vm.ExecuteContext(ctx, "main") // interrupts runaway WASM
+```
+
+More runnable examples live in [example_test.go](example_test.go) and on
+pkg.go.dev.
+
+## What changed from v1 (highlights)
+
+- Every fallible call returns `error`; engine failures are typed
+  `*wasmedge.Error` values (`errors.Is`/`errors.As` work).
+- `Release()` is gone: resources are `io.Closer`s with idempotent `Close`,
+  ownership transfer tracking, and a GC safety net (leak reports under
+  `-tags wasmedge_debug`).
+- WASM values are typed `wasmedge.Value`s (`I32(…)`, `v.I32()`), not
+  `interface{}`.
+- Configuration is a declarative struct with no lifetime to manage.
+- Host functions: one reflective line (`WrapFunc`) or the explicit
+  `HostFunc` form; Go panics never cross into the engine.
+- `log/slog` integration for engine logs.
+
+See [docs/MIGRATION.md](docs/MIGRATION.md) for the full table.
+
+## Building against a local WasmEdge checkout
+
+```bash
+export WASMEDGE_DIR=$HOME/workspace/WasmEdge
+export CGO_CFLAGS="-I$WASMEDGE_DIR/build/include/api"
+export CGO_LDFLAGS="-L$WASMEDGE_DIR/build/lib/api -Wl,-rpath,$WASMEDGE_DIR/build/lib/api -lwasmedge"
+go test ./...
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development guide and the
+mentored starter-task list.
+
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE).
