@@ -130,6 +130,11 @@
 
 ### Phase 9: deferred follow-ups (tracked, not in this branch)
 
+- [ ] File upstream WasmEdge bug: `WasmEdge_LoaderSerializeASTModule` aborts
+  with `std::system_error: mutex lock failed` on 0.17.0-168-gad9d34498
+  (pure-C reproducer confirmed; see the comment on TestSerializeRoundTrip in
+  pipeline_test.go). Re-enable that test via `WASMEDGE_TEST_SERIALIZE=1`
+  after the fix.
 - [ ] Regenerate Bazel BUILD files for root-package layout (gazelle) — restores #58
 - [ ] Windows CI lane (cgo flags exist; needs runner validation)
 - [ ] `wasmedge_experimental.h` behind `//go:build wasmedge_experimental`
