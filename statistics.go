@@ -24,11 +24,11 @@ func NewStatistics() *Statistics {
 	return s
 }
 
-func borrowedStatistics(ptr *C.WasmEdge_StatisticsContext) *Statistics {
+func borrowedStatistics(ptr *C.WasmEdge_StatisticsContext, owner any) *Statistics {
 	if ptr == nil {
 		return nil
 	}
-	return &Statistics{ptr: ptr, life: borrowed()}
+	return &Statistics{ptr: ptr, life: borrowed(owner)}
 }
 
 // InstrCount returns the executed-instruction count (requires

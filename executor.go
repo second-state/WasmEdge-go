@@ -47,11 +47,11 @@ func NewExecutor(cfg *Config, opts ...ExecutorOption) (*Executor, error) {
 	return e, nil
 }
 
-func borrowedExecutor(ptr *C.WasmEdge_ExecutorContext) *Executor {
+func borrowedExecutor(ptr *C.WasmEdge_ExecutorContext, owner any) *Executor {
 	if ptr == nil {
 		return nil
 	}
-	return &Executor{ptr: ptr, life: borrowed()}
+	return &Executor{ptr: ptr, life: borrowed(owner)}
 }
 
 // Instantiate creates the anonymous active module instance of ast within

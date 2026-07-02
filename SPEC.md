@@ -75,7 +75,11 @@ two-layer split — a high-level `VM` for the common path and explicit
 layers in idiomatic Go: typed values, `error`, `Close`, declarative `Config`,
 reflection-wrapped host functions, `context.Context` async.
 *Chosen:* preserves a 1:1 mental mapping to the C API docs (crucial for a
-binding) while making misuse hard.
+binding) while making misuse hard. This mirrors the ownership taxonomy of
+the sibling Python binding redesign (`bindings/python/DESIGN.md` in the
+WasmEdge repo, branch `hyda/new_python_binding`) and the Rust split
+(`wasmedge-sys`/`wasmedge-sdk`); keep the three bindings' lifetime models
+aligned when evolving any of them.
 
 **C. Facade with hidden engine (wazero-style interfaces).** Define pure-Go
 interfaces (`Runtime`, `CompiledModule`, …) and hide cgo entirely as a
@@ -172,7 +176,10 @@ Every wrapper embeds a small `resource` helper that records:
   `io.Closer`.
 - **borrowed** — obtained from a container (e.g. `Store.Module`,
   `Module.Function`, `CallContext.Memory`). `Close` is a no-op; validity is
-  bounded by the owner and documented on the accessor.
+  bounded by the owner and documented on the accessor. Borrowed views hold
+  a strong reference to their owning wrapper, so a live view keeps the
+  owner's GC safety net from freeing the underlying C object (views scoped
+  to a host call are instead guarded by the `CallContext` validity flag).
 - **transferred** — ownership moved into the engine (e.g. a `*Function`
   added to a `*Module` via `AddFunction`, a `Limits`/`FunctionType` consumed
   by a constructor). The transfer API disarms the wrapper so a later `Close`

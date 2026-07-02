@@ -29,7 +29,7 @@ func (s *Store) Module(name string) (*Module, bool) {
 	defer runtime.KeepAlive(s)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	m := borrowedModule(C.WasmEdge_StoreFindModule(s.ptr, cname))
+	m := borrowedModule(C.WasmEdge_StoreFindModule(s.ptr, cname), s)
 	return m, m != nil
 }
 

@@ -53,7 +53,7 @@ func NewWASIModule(cfg WASIConfig) *Module {
 // exit code or re-init the sandbox between runs.
 func (vm *VM) WASIModule() (*Module, bool) {
 	defer runtime.KeepAlive(vm)
-	m := borrowedModule(C.WasmEdge_VMGetImportModuleContext(vm.ptr, C.WasmEdge_HostRegistration_Wasi))
+	m := borrowedModule(C.WasmEdge_VMGetImportModuleContext(vm.ptr, C.WasmEdge_HostRegistration_Wasi), vm)
 	return m, m != nil
 }
 

@@ -149,7 +149,7 @@ func (vm *VM) Execute(fn string, params ...Value) ([]Value, error) {
 	cname := newWEString(fn)
 	defer freeWEString(cname)
 
-	ft := borrowedFunctionType(C.WasmEdge_VMGetFunctionType(vm.ptr, cname))
+	ft := borrowedFunctionType(C.WasmEdge_VMGetFunctionType(vm.ptr, cname), vm)
 	if ft == nil {
 		return nil, &Error{Category: ErrCategoryWASM, Code: ErrCodeFuncNotFound,
 			Message: "wasm function not found: " + fn}
@@ -249,7 +249,7 @@ func (vm *VM) Functions() []VMFunction {
 	for i := range int(min(got, n)) {
 		out = append(out, VMFunction{
 			Name: goString(names[i]),
-			Type: borrowedFunctionType(types[i]),
+			Type: borrowedFunctionType(types[i], vm),
 		})
 	}
 	return out
@@ -261,7 +261,7 @@ func (vm *VM) FunctionType(fn string) (*FunctionType, bool) {
 	defer runtime.KeepAlive(vm)
 	cname := newWEString(fn)
 	defer freeWEString(cname)
-	ft := borrowedFunctionType(C.WasmEdge_VMGetFunctionType(vm.ptr, cname))
+	ft := borrowedFunctionType(C.WasmEdge_VMGetFunctionType(vm.ptr, cname), vm)
 	return ft, ft != nil
 }
 
@@ -269,7 +269,7 @@ func (vm *VM) FunctionType(fn string) (*FunctionType, bool) {
 // nil before Instantiate.
 func (vm *VM) ActiveModule() *Module {
 	defer runtime.KeepAlive(vm)
-	return borrowedModule(C.WasmEdge_VMGetActiveModule(vm.ptr))
+	return borrowedModule(C.WasmEdge_VMGetActiveModule(vm.ptr), vm)
 }
 
 // RegisteredModule looks up a module registered into this VM (borrowed).
@@ -277,7 +277,7 @@ func (vm *VM) RegisteredModule(name string) (*Module, bool) {
 	defer runtime.KeepAlive(vm)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	m := borrowedModule(C.WasmEdge_VMGetRegisteredModule(vm.ptr, cname))
+	m := borrowedModule(C.WasmEdge_VMGetRegisteredModule(vm.ptr, cname), vm)
 	return m, m != nil
 }
 
@@ -294,13 +294,13 @@ func (vm *VM) RegisteredModuleNames() []string {
 // Store returns the VM's store (borrowed).
 func (vm *VM) Store() *Store {
 	defer runtime.KeepAlive(vm)
-	return &Store{ptr: C.WasmEdge_VMGetStoreContext(vm.ptr), life: borrowed()}
+	return &Store{ptr: C.WasmEdge_VMGetStoreContext(vm.ptr), life: borrowed(vm)}
 }
 
 // Stats returns the VM's statistics collector (borrowed).
 func (vm *VM) Stats() *Statistics {
 	defer runtime.KeepAlive(vm)
-	return borrowedStatistics(C.WasmEdge_VMGetStatisticsContext(vm.ptr))
+	return borrowedStatistics(C.WasmEdge_VMGetStatisticsContext(vm.ptr), vm)
 }
 
 // Reset clears the VM back to the freshly created state (the C API's

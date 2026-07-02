@@ -74,11 +74,11 @@ func NewFunctionType(params, results []ValType) *FunctionType {
 	return t
 }
 
-func borrowedFunctionType(ptr *C.WasmEdge_FunctionTypeContext) *FunctionType {
+func borrowedFunctionType(ptr *C.WasmEdge_FunctionTypeContext, owner any) *FunctionType {
 	if ptr == nil {
 		return nil
 	}
-	return &FunctionType{ptr: ptr, life: borrowed()}
+	return &FunctionType{ptr: ptr, life: borrowed(owner)}
 }
 
 // Parameters returns the parameter types.
@@ -131,11 +131,11 @@ func NewTableType(refType ValType, limits Limits) *TableType {
 	return t
 }
 
-func borrowedTableType(ptr *C.WasmEdge_TableTypeContext) *TableType {
+func borrowedTableType(ptr *C.WasmEdge_TableTypeContext, owner any) *TableType {
 	if ptr == nil {
 		return nil
 	}
-	return &TableType{ptr: ptr, life: borrowed()}
+	return &TableType{ptr: ptr, life: borrowed(owner)}
 }
 
 // RefType returns the table's element type.
@@ -175,11 +175,11 @@ func NewMemoryType(limits Limits) *MemoryType {
 	return t
 }
 
-func borrowedMemoryType(ptr *C.WasmEdge_MemoryTypeContext) *MemoryType {
+func borrowedMemoryType(ptr *C.WasmEdge_MemoryTypeContext, owner any) *MemoryType {
 	if ptr == nil {
 		return nil
 	}
-	return &MemoryType{ptr: ptr, life: borrowed()}
+	return &MemoryType{ptr: ptr, life: borrowed(owner)}
 }
 
 // Limits returns the memory's page limits.
@@ -211,11 +211,11 @@ func NewGlobalType(valType ValType, mut Mutability) *GlobalType {
 	return t
 }
 
-func borrowedGlobalType(ptr *C.WasmEdge_GlobalTypeContext) *GlobalType {
+func borrowedGlobalType(ptr *C.WasmEdge_GlobalTypeContext, owner any) *GlobalType {
 	if ptr == nil {
 		return nil
 	}
-	return &GlobalType{ptr: ptr, life: borrowed()}
+	return &GlobalType{ptr: ptr, life: borrowed(owner)}
 }
 
 // ValType returns the global's value type.
@@ -239,20 +239,21 @@ func (t *GlobalType) Close() error {
 // TagType describes an exception-handling tag. Tags cannot be created via
 // the C API; TagType values are always borrowed from modules or instances.
 type TagType struct {
-	ptr *C.WasmEdge_TagTypeContext
+	ptr   *C.WasmEdge_TagTypeContext
+	owner any // pins whatever owns the underlying tag type
 }
 
-func borrowedTagType(ptr *C.WasmEdge_TagTypeContext) *TagType {
+func borrowedTagType(ptr *C.WasmEdge_TagTypeContext, owner any) *TagType {
 	if ptr == nil {
 		return nil
 	}
-	return &TagType{ptr: ptr}
+	return &TagType{ptr: ptr, owner: owner}
 }
 
 // FunctionType returns the tag's associated function type (borrowed).
 func (t *TagType) FunctionType() *FunctionType {
 	defer runtime.KeepAlive(t)
-	return borrowedFunctionType(C.WasmEdge_TagTypeGetFunctionType(t.ptr))
+	return borrowedFunctionType(C.WasmEdge_TagTypeGetFunctionType(t.ptr), t)
 }
 
 func packValTypes(ts []ValType) []C.WasmEdge_ValType {

@@ -87,7 +87,7 @@ func (t *ImportType) Name() string {
 // the entry does not import a function.
 func (t *ImportType) FunctionType() *FunctionType {
 	defer runtime.KeepAlive(t.ast)
-	return borrowedFunctionType(C.WasmEdge_ImportTypeGetFunctionType(t.ast.ptr, t.ptr))
+	return borrowedFunctionType(C.WasmEdge_ImportTypeGetFunctionType(t.ast.ptr, t.ptr), t.ast)
 }
 
 // TODO(intern-easy): A3 — bind the remaining typed accessors on ImportType
@@ -128,5 +128,5 @@ func (t *ExportType) Name() string {
 // the entry does not export a function.
 func (t *ExportType) FunctionType() *FunctionType {
 	defer runtime.KeepAlive(t.ast)
-	return borrowedFunctionType(C.WasmEdge_ExportTypeGetFunctionType(t.ast.ptr, t.ptr))
+	return borrowedFunctionType(C.WasmEdge_ExportTypeGetFunctionType(t.ast.ptr, t.ptr), t.ast)
 }

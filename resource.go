@@ -27,9 +27,17 @@ type lifetime struct {
 	owned   bool
 	closed  atomic.Bool
 	cleanup runtime.Cleanup
+	// owner pins the owning wrapper of a borrowed view. Methods keep the
+	// view alive across C calls (rule 1), and the view's reference to its
+	// owner transitively keeps the owner's GC cleanup from freeing the C
+	// object out from under the view. Nil for owned wrappers and for views
+	// whose validity is guarded another way (CallContext's valid flag).
+	owner any
 }
 
-func borrowed() lifetime { return lifetime{owned: false} }
+// borrowed builds the lifetime of a non-owning view. Pass the wrapper that
+// owns the underlying C object whenever one exists on the Go side.
+func borrowed(owner any) lifetime { return lifetime{owner: owner} }
 
 // arm registers the GC safety net on an owned wrapper. free must capture
 // only the raw C pointer — never the wrapper itself, or it will never be

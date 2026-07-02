@@ -20,7 +20,7 @@ func (c *CallContext) mustValid() {
 // Executor returns the executor driving this call (borrowed).
 func (c *CallContext) Executor() *Executor {
 	c.mustValid()
-	return borrowedExecutor(C.WasmEdge_CallingFrameGetExecutor(c.ptr))
+	return borrowedExecutor(C.WasmEdge_CallingFrameGetExecutor(c.ptr), nil)
 }
 
 // Module returns the module instance of the calling frame (borrowed). It
@@ -28,7 +28,7 @@ func (c *CallContext) Executor() *Executor {
 // directly rather than from WASM code.
 func (c *CallContext) Module() *Module {
 	c.mustValid()
-	return borrowedModule(C.WasmEdge_CallingFrameGetModuleInstance(c.ptr))
+	return borrowedModule(C.WasmEdge_CallingFrameGetModuleInstance(c.ptr), nil)
 }
 
 // Memory returns the memory instance at idx of the calling module
@@ -36,5 +36,5 @@ func (c *CallContext) Module() *Module {
 // memory.
 func (c *CallContext) Memory(idx uint32) *Memory {
 	c.mustValid()
-	return borrowedMemory(C.WasmEdge_CallingFrameGetMemoryInstance(c.ptr, C.uint32_t(idx)))
+	return borrowedMemory(C.WasmEdge_CallingFrameGetMemoryInstance(c.ptr, C.uint32_t(idx)), nil)
 }

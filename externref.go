@@ -23,9 +23,11 @@ func NewExternRef(v any) *ExternRef {
 	return r
 }
 
-// borrowedExternRef wraps a handle that some open *ExternRef owns.
+// borrowedExternRef wraps a handle that some open *ExternRef owns. The
+// owner cannot be recovered from the raw handle, so the view pins nothing;
+// validity follows the owning ExternRef, as documented on Value.ExternRef.
 func borrowedExternRef(h uintptr) *ExternRef {
-	return &ExternRef{h: cgo.Handle(h), life: borrowed()}
+	return &ExternRef{h: cgo.Handle(h), life: borrowed(nil)}
 }
 
 // Value returns the pinned Go value. It panics if the owning reference has

@@ -28,17 +28,17 @@ func NewGlobal(gt *GlobalType, init Value) *Global {
 	return g
 }
 
-func borrowedGlobal(ptr *C.WasmEdge_GlobalInstanceContext) *Global {
+func borrowedGlobal(ptr *C.WasmEdge_GlobalInstanceContext, owner any) *Global {
 	if ptr == nil {
 		return nil
 	}
-	return &Global{ptr: ptr, life: borrowed()}
+	return &Global{ptr: ptr, life: borrowed(owner)}
 }
 
 // Type returns the global's type (borrowed).
 func (g *Global) Type() *GlobalType {
 	defer runtime.KeepAlive(g)
-	return borrowedGlobalType(C.WasmEdge_GlobalInstanceGetGlobalType(g.ptr))
+	return borrowedGlobalType(C.WasmEdge_GlobalInstanceGetGlobalType(g.ptr), g)
 }
 
 // TODO(intern-medium): A7 — bind value access on this type:

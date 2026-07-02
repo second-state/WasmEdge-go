@@ -46,11 +46,11 @@ func ownedTable(ptr *C.WasmEdge_TableInstanceContext) *Table {
 	return t
 }
 
-func borrowedTable(ptr *C.WasmEdge_TableInstanceContext) *Table {
+func borrowedTable(ptr *C.WasmEdge_TableInstanceContext, owner any) *Table {
 	if ptr == nil {
 		return nil
 	}
-	return &Table{ptr: ptr, life: borrowed()}
+	return &Table{ptr: ptr, life: borrowed(owner)}
 }
 
 // Get returns the reference value at idx, bounds-checked by the engine.

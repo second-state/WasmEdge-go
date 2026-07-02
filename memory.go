@@ -31,17 +31,17 @@ func NewMemory(mt *MemoryType) *Memory {
 	return m
 }
 
-func borrowedMemory(ptr *C.WasmEdge_MemoryInstanceContext) *Memory {
+func borrowedMemory(ptr *C.WasmEdge_MemoryInstanceContext, owner any) *Memory {
 	if ptr == nil {
 		return nil
 	}
-	return &Memory{ptr: ptr, life: borrowed()}
+	return &Memory{ptr: ptr, life: borrowed(owner)}
 }
 
 // Type returns the memory's type (borrowed).
 func (m *Memory) Type() *MemoryType {
 	defer runtime.KeepAlive(m)
-	return borrowedMemoryType(C.WasmEdge_MemoryInstanceGetMemoryType(m.ptr))
+	return borrowedMemoryType(C.WasmEdge_MemoryInstanceGetMemoryType(m.ptr), m)
 }
 
 // Read copies length bytes starting at offset. The engine bounds-checks the

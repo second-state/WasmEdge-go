@@ -59,11 +59,11 @@ func ownedModule(ptr *C.WasmEdge_ModuleInstanceContext) *Module {
 	return m
 }
 
-func borrowedModule(ptr *C.WasmEdge_ModuleInstanceContext) *Module {
+func borrowedModule(ptr *C.WasmEdge_ModuleInstanceContext, owner any) *Module {
 	if ptr == nil {
 		return nil
 	}
-	return &Module{ptr: ptr, life: borrowed()}
+	return &Module{ptr: ptr, life: borrowed(owner)}
 }
 
 // Name returns the module's registered name.
@@ -158,7 +158,7 @@ func (m *Module) Function(name string) (*Function, bool) {
 	defer runtime.KeepAlive(m)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	f := borrowedFunction(C.WasmEdge_ModuleInstanceFindFunction(m.ptr, cname))
+	f := borrowedFunction(C.WasmEdge_ModuleInstanceFindFunction(m.ptr, cname), m)
 	return f, f != nil
 }
 
@@ -167,7 +167,7 @@ func (m *Module) Memory(name string) (*Memory, bool) {
 	defer runtime.KeepAlive(m)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	mem := borrowedMemory(C.WasmEdge_ModuleInstanceFindMemory(m.ptr, cname))
+	mem := borrowedMemory(C.WasmEdge_ModuleInstanceFindMemory(m.ptr, cname), m)
 	return mem, mem != nil
 }
 
@@ -176,7 +176,7 @@ func (m *Module) Table(name string) (*Table, bool) {
 	defer runtime.KeepAlive(m)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	t := borrowedTable(C.WasmEdge_ModuleInstanceFindTable(m.ptr, cname))
+	t := borrowedTable(C.WasmEdge_ModuleInstanceFindTable(m.ptr, cname), m)
 	return t, t != nil
 }
 
@@ -185,7 +185,7 @@ func (m *Module) Global(name string) (*Global, bool) {
 	defer runtime.KeepAlive(m)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	g := borrowedGlobal(C.WasmEdge_ModuleInstanceFindGlobal(m.ptr, cname))
+	g := borrowedGlobal(C.WasmEdge_ModuleInstanceFindGlobal(m.ptr, cname), m)
 	return g, g != nil
 }
 
@@ -194,7 +194,7 @@ func (m *Module) Tag(name string) (*Tag, bool) {
 	defer runtime.KeepAlive(m)
 	cname := newWEString(name)
 	defer freeWEString(cname)
-	t := borrowedTag(C.WasmEdge_ModuleInstanceFindTag(m.ptr, cname))
+	t := borrowedTag(C.WasmEdge_ModuleInstanceFindTag(m.ptr, cname), m)
 	return t, t != nil
 }
 

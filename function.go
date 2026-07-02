@@ -67,17 +67,17 @@ func NewFunction(ft *FunctionType, fn HostFunc, opts ...FunctionOption) *Functio
 	return f
 }
 
-func borrowedFunction(ptr *C.WasmEdge_FunctionInstanceContext) *Function {
+func borrowedFunction(ptr *C.WasmEdge_FunctionInstanceContext, owner any) *Function {
 	if ptr == nil {
 		return nil
 	}
-	return &Function{ptr: ptr, life: borrowed()}
+	return &Function{ptr: ptr, life: borrowed(owner)}
 }
 
 // Type returns the function's type (borrowed).
 func (f *Function) Type() *FunctionType {
 	defer runtime.KeepAlive(f)
-	return borrowedFunctionType(C.WasmEdge_FunctionInstanceGetFunctionType(f.ptr))
+	return borrowedFunctionType(C.WasmEdge_FunctionInstanceGetFunctionType(f.ptr), f)
 }
 
 // Close frees an owned host function that was NOT added to a module, and
@@ -106,7 +106,7 @@ func FuncRefValue(f *Function) Value {
 // or nil for a null funcref. It panics if the value is not a funcref.
 func (v Value) FuncRef() *Function {
 	v.mustKind(ValKindFuncRef)
-	return borrowedFunction(C.WasmEdge_ValueGetFuncRef(v.raw))
+	return borrowedFunction(C.WasmEdge_ValueGetFuncRef(v.raw), nil)
 }
 
 // WrapFunc derives a host function from a plain Go function using
