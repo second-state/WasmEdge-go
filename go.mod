@@ -1,6 +1,3 @@
-module github.com/second-state/WasmEdge-go
+module github.com/second-state/WasmEdge-go/v2
 
-go 1.21
-
-// Lost header in v0.9.1 version. Please use the WasmEdge-go v0.9.2 for WasmEdge 0.9.1.
-retract v0.9.1
+go 1.24
