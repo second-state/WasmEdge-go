@@ -136,6 +136,11 @@
   pipeline_test.go). Re-enable that test via `WASMEDGE_TEST_SERIALIZE=1`
   after the fix.
 - [ ] Regenerate Bazel BUILD files for root-package layout (gazelle) — restores #58
+- [ ] When bumping to the next C API line: `WasmEdge_ModuleInstanceAdd*`
+  return `WasmEdge_Result` at upstream HEAD (void in released 0.17.0) —
+  switch module.go's Add* bodies to `newResult(...)`; the Go signatures
+  already return error so this is non-breaking. Upstream HEAD also removed
+  the post-0.17 MaxGC configure knobs; do not bind them.
 - [ ] Windows CI lane (cgo flags exist; needs runner validation)
 - [ ] `wasmedge_experimental.h` behind `//go:build wasmedge_experimental`
 - [ ] Typed plugin sub-packages (wasi_nn) if demand appears
