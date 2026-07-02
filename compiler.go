@@ -1,0 +1,59 @@
+package wasmedge
+
+// #include <stdlib.h>
+// #include <wasmedge/wasmedge.h>
+import "C"
+
+import (
+	"runtime"
+	"unsafe"
+)
+
+// Compiler is the AOT compiler: it turns WASM binaries into native shared
+// libraries or universal WASM (AOT sections embedded), per
+// Config.Compiler.OutputFormat.
+type Compiler struct {
+	ptr  *C.WasmEdge_CompilerContext
+	life lifetime
+}
+
+// NewCompiler creates an AOT compiler honoring cfg (nil for defaults).
+// Creation fails when the library was built without the AOT backend.
+func NewCompiler(cfg *Config) (*Compiler, error) {
+	ccfg, free := cfg.build()
+	defer free()
+	ptr := C.WasmEdge_CompilerCreate(ccfg)
+	if ptr == nil {
+		return nil, &Error{Category: ErrCategoryWASM, Code: ErrCodeAOTDisabled,
+			Message: "AOT compiler unavailable in this library build"}
+	}
+	c := &Compiler{ptr: ptr}
+	arm(c, &c.life, "Compiler", func() { C.WasmEdge_CompilerDelete(ptr) })
+	return c, nil
+}
+
+// CompileFile compiles the WASM binary at inPath into outPath.
+func (c *Compiler) CompileFile(inPath, outPath string) error {
+	defer runtime.KeepAlive(c)
+	cin := C.CString(inPath)
+	defer C.free(unsafe.Pointer(cin))
+	cout := C.CString(outPath)
+	defer C.free(unsafe.Pointer(cout))
+	return newResult(C.WasmEdge_CompilerCompile(c.ptr, cin, cout))
+}
+
+// CompileBytes compiles a WASM binary from memory into outPath.
+func (c *Compiler) CompileBytes(b []byte, outPath string) error {
+	defer runtime.KeepAlive(c)
+	cout := C.CString(outPath)
+	defer C.free(unsafe.Pointer(cout))
+	err := newResult(C.WasmEdge_CompilerCompileFromBytes(c.ptr, wrapBytes(b), cout))
+	runtime.KeepAlive(b)
+	return err
+}
+
+// Close frees the compiler. No-op after the first call.
+func (c *Compiler) Close() error {
+	ptr := c.ptr
+	return c.life.close(func() { C.WasmEdge_CompilerDelete(ptr) })
+}
