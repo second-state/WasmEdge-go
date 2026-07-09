@@ -17,10 +17,13 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
+        go: [ '1.25.x', '1.26.x' ]
     name: Run WasmEdge-go-examples in AOT mode with Go ${{ matrix.go }}
 
     steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v6
 
     - name: Install apt-get packages
       run: |
@@ -38,7 +41,11 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.14.0
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.17.1
+
+    - name: WASM spec tests
+      run: |
+        go test ./spectest/ -count=1 -timeout 60m
 
     - name: Install the examples
       run: |
@@ -106,70 +113,6 @@ jobs:
         wasmedgec greet.wasm out.wasm
         ./greet_memory out.wasm
         
-    - name: go_BindgenFuncs
-      run: |
-        cd wasmedge-go-examples/go_BindgenFuncs
-        go get .
-        go build
-        wasmedgec rust_bindgen_funcs_lib.wasm out.wasm
-        ./bindgen_funcs out.wasm
-        
-    - name: go_BindgenKmeans
-      run: |
-        cd wasmedge-go-examples/go_BindgenKmeans
-        go get .
-        go build
-        wasmedgec rust_bindgen_kmeans_lib.wasm out.wasm
-        ./bindgen_kmeans out.wasm
-        
-    - name: go_BindgenWasi
-      run: |
-        cd wasmedge-go-examples/go_BindgenWasi
-        go get .
-        go build
-        wasmedgec rust_bindgen_wasi_lib.wasm out.wasm
-        ./bindgen_wasi out.wasm
-
-    - name: go_Mobilenet
-      run: |
-        cd wasmedge-go-examples/go_Mobilenet
-        go get .
-        go build
-        wasmedgec rust_mobilenet_lib.wasm out.wasm
-        ./mobilenet out.wasm grace_hopper.jpg
-
-    - name: go_MobilenetBirds
-      run: |
-        cd wasmedge-go-examples/go_MobilenetBirds
-        go get .
-        go build
-        wasmedgec rust_mobilenet_birds_lib.wasm out.wasm
-        ./mobilenet_birds out.wasm PurpleGallinule.jpg
-
-    - name: go_MobilenetFood
-      run: |
-        cd wasmedge-go-examples/go_MobilenetFood
-        go get .
-        go build
-        wasmedgec rust_mobilenet_food_lib.wasm out.wasm
-        ./mobilenet_food out.wasm food.jpg
-
-    - name: go_MobilenetInsects
-      run: |
-        cd wasmedge-go-examples/go_MobilenetInsects
-        go get .
-        go build
-        wasmedgec rust_mobilenet_insects_lib.wasm out.wasm
-        ./mobilenet_insects out.wasm ladybug.jpg
-
-    - name: go_MobilenetPlants
-      run: |
-        cd wasmedge-go-examples/go_MobilenetPlants
-        go get .
-        go build
-        wasmedgec rust_mobilenet_plants_lib.wasm out.wasm
-        ./mobilenet_plants out.wasm sunflower.jpg
-
     - name: go_mtcnn
       run: |
         cd wasmedge-go-examples/go_mtcnn
@@ -184,7 +127,7 @@ jobs:
     
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
+        go: [ '1.25.x', '1.26.x' ]
     name: Run WasmEdge-go-examples in interpreter mode with Go ${{ matrix.go }}
 
     steps:
@@ -205,7 +148,7 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.14.0
+        wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.17.1
 
     - name: Install the examples
       run: |
@@ -274,63 +217,6 @@ jobs:
         go build greet_memory.go
         ./greet_memory greet.wasm
         
-    - name: go_BindgenFuncs
-      run: |
-        cd wasmedge-go-examples/go_BindgenFuncs
-        go get .
-        go build
-        ./bindgen_funcs rust_bindgen_funcs_lib.wasm
-
-    # Not to run this example in interpreter mode to reduce CI time.   
-    #- name: go_BindgenKmeans
-    #  run: |
-    #    cd wasmedge-go-examples/go_BindgenKmeans
-    #    go get .
-    #    go build
-    #    ./bindgen_kmeans rust_bindgen_kmeans_lib.wasm
-        
-    - name: go_BindgenWasi
-      run: |
-        cd wasmedge-go-examples/go_BindgenWasi
-        go get .
-        go build
-        ./bindgen_wasi rust_bindgen_wasi_lib.wasm
-
-    - name: go_Mobilenet
-      run: |
-        cd wasmedge-go-examples/go_Mobilenet
-        go get .
-        go build
-        ./mobilenet rust_mobilenet_lib.wasm grace_hopper.jpg
-
-    - name: go_MobilenetBirds
-      run: |
-        cd wasmedge-go-examples/go_MobilenetBirds
-        go get .
-        go build
-        ./mobilenet_birds rust_mobilenet_birds_lib.wasm PurpleGallinule.jpg
-
-    - name: go_MobilenetFood
-      run: |
-        cd wasmedge-go-examples/go_MobilenetFood
-        go get .
-        go build
-        ./mobilenet_food rust_mobilenet_food_lib.wasm food.jpg
-
-    - name: go_MobilenetInsects
-      run: |
-        cd wasmedge-go-examples/go_MobilenetInsects
-        go get .
-        go build
-        ./mobilenet_insects rust_mobilenet_insects_lib.wasm ladybug.jpg
-
-    - name: go_MobilenetPlants
-      run: |
-        cd wasmedge-go-examples/go_MobilenetPlants
-        go get .
-        go build
-        ./mobilenet_plants rust_mobilenet_plants_lib.wasm sunflower.jpg
-
     - name: go_mtcnn
       run: |
         cd wasmedge-go-examples/go_mtcnn

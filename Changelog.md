@@ -1,3 +1,66 @@
+### v0.17.1 (2026-07-10)
+
+Breaking Changes:
+
+* Updated to the [WasmEdge 0.17.1](https://github.com/WasmEdge/WasmEdge/releases/tag/0.17.1) C API.
+* Removed all wasm-bindgen related APIs. Please use the [wasmedge-bindgen](https://github.com/second-state/wasmedge-bindgen) project or plain WASM functions instead.
+  * Removed the `(*wasmedge.VM).ExecuteBindgen()` API.
+  * Removed the `(*wasmedge.VM).ExecuteBindgenRegistered()` API.
+  * Removed the `wasmedge.Bindgen_return_void`, `wasmedge.Bindgen_return_i32`, `wasmedge.Bindgen_return_i64`, and `wasmedge.Bindgen_return_array` const values.
+* Removed the force-interpreter configuration in favor of the new run mode configuration.
+  * Removed the `(*wasmedge.Configure).SetForceInterpreter()` API. Please use the `(*wasmedge.Configure).SetRunMode()` API instead.
+  * Removed the `(*wasmedge.Configure).IsForceInterpreter()` API. Please use the `(*wasmedge.Configure).GetRunMode()` API instead.
+* Changed the `wasmedge.Limit` into a context type like the other types, along with the `WasmEdge_LimitContext` introduced in the WasmEdge 0.17.1 C API.
+  * The `wasmedge.NewLimit*()` APIs create a limit context now, and developers should call the `(*wasmedge.Limit).Release()` API to destroy it after use.
+  * The `(*wasmedge.TableType).GetLimit()` and `(*wasmedge.MemoryType).GetLimit()` APIs return a limit reference which is valid while the type context is valid.
+* Removed the `wasmedge.NewLimitShared()` API: shared limits require a maximum value in WasmEdge 0.17.1. Please use the `wasmedge.NewLimitSharedWithMax()` API instead.
+* Changed the `(*wasmedge.VM).ForceDeleteRegisteredModule()` semantics along with the WasmEdge C API: the module instance is destroyed, and any Go wrapper of it must not be released afterwards.
+
+Features:
+
+* Added the run mode configuration for selecting the execution engine.
+  * Added the `wasmedge.RunMode_Interpreter`, `wasmedge.RunMode_JIT`, and `wasmedge.RunMode_AOT` const values.
+  * Added the `(*wasmedge.Configure).SetRunMode()` API.
+  * Added the `(*wasmedge.Configure).GetRunMode()` API.
+* Added the WASM standard configuration.
+  * Added the `wasmedge.Standard_WASM_1`, `wasmedge.Standard_WASM_2`, and `wasmedge.Standard_WASM_3` const values.
+  * Added the `(*wasmedge.Configure).SetWASMStandard()` API.
+* Added the log level APIs.
+  * Added the `wasmedge.LogLevel_Trace`, `wasmedge.LogLevel_Debug`, `wasmedge.LogLevel_Info`, `wasmedge.LogLevel_Warn`, `wasmedge.LogLevel_Error`, and `wasmedge.LogLevel_Critical` const values.
+  * Added the `wasmedge.SetLogLevel()` API.
+* Added the 64-bit limits for the memory64 proposal.
+  * Added the `wasmedge.NewLimit64()`, `wasmedge.NewLimit64WithMax()`, and `wasmedge.NewLimit64SharedWithMax()` APIs.
+  * Added the `(*wasmedge.Limit).Is64Bit()` API.
+  * Added the `(*wasmedge.Limit).IsEqual()` API.
+  * The memory and table instance APIs use 64-bit offsets and sizes internally now.
+* Added the WASI module creation with custom file descriptors.
+  * Added the `wasmedge.NewWasiModuleWithFds()` API.
+  * Added the `(*wasmedge.Module).InitWasiWithFds()` API.
+* Added the module registration with alias names.
+  * Added the `(*wasmedge.VM).RegisterModuleWithAlias()` API.
+  * Added the `(*wasmedge.VM).ForceDeleteRegisteredModule()` API.
+  * Added the `(*wasmedge.Executor).RegisterImportWithAlias()` API.
+* Added the reference value helpers.
+  * Added the `wasmedge.Ref` struct for the GC proposal references with the `IsNull()` and `GetValType()` APIs.
+  * Added the `(wasmedge.FuncRef).IsNull()` and `(wasmedge.ExternRef).IsNull()` APIs.
+  * Added the `wasmedge.NewNullExternRef()` API, and `wasmedge.NewFuncRef(nil)` creates a null function reference now.
+
+Fixes:
+
+* Fixed the `wasmedge.NewExternRef()` crash with WasmEdge 0.17.x: the reference values are generated through the C API now instead of forging the value payload.
+* Fixed the nil pointer dereference in the `(*wasmedge.FunctionType).GetParameters()` and `(*wasmedge.FunctionType).GetReturns()` APIs.
+* Fixed the maximum memory page configuration to use the full 64-bit range.
+
+Tests:
+
+* Added the unit tests for the API surface of the `wasmedge` package.
+* Added the WASM specification test suites in the interpreter, AOT, and JIT modes under the `spectest` package.
+
+Misc:
+
+* Updated the minimum Go version to 1.25.
+* Updated the CI workflows to WasmEdge 0.17.1 and Go 1.25/1.26, and enabled the new tests.
+
 ### v0.14.0 (2025-02-14)
 
 Breaking Changes:

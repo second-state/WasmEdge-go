@@ -35,6 +35,24 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["limit_test.go"],
+    srcs = [
+        "ast_test.go",
+        "cli_test.go",
+        "compiler_test.go",
+        "configure_test.go",
+        "executor_test.go",
+        "instance_test.go",
+        "limit_test.go",
+        "log_test.go",
+        "plugin_test.go",
+        "result_test.go",
+        "statistics_test.go",
+        "store_test.go",
+        "value_test.go",
+        "version_test.go",
+        "vm_test.go",
+        "wasmedge_test.go",
+    ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
 )
