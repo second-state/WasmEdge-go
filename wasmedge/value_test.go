@@ -130,6 +130,38 @@ func TestExternRef(t *testing.T) {
 	}()
 }
 
+func TestNullRefs(t *testing.T) {
+	vm := NewVM()
+	defer vm.Release()
+
+	nullExtern := NewNullExternRef()
+	if !nullExtern.IsNull() {
+		t.Error("NewNullExternRef() should be null")
+	}
+	if nullExtern.GetRef() != nil {
+		t.Error("null externref should hold no reference")
+	}
+	rets, err := vm.RunWasmFile(testWasmPath("refs.wasm"), "is_null_extern", nullExtern)
+	if err != nil {
+		t.Fatalf("is_null_extern failed: %v", err)
+	}
+	if rets[0].(int32) != 1 {
+		t.Error("null externref should be ref.null inside WASM")
+	}
+
+	nullFunc := NewFuncRef(nil)
+	if !nullFunc.IsNull() {
+		t.Error("NewFuncRef(nil) should be null")
+	}
+	rets, err = vm.Execute("func_id", nullFunc)
+	if err != nil {
+		t.Fatalf("func_id failed: %v", err)
+	}
+	if got := rets[0].(FuncRef); !got.IsNull() {
+		t.Error("null funcref should round-trip as null")
+	}
+}
+
 func TestFuncRef(t *testing.T) {
 	// Instantiate types.wasm which exports a funcref table with slot 0
 	// initialized and the other slots null.

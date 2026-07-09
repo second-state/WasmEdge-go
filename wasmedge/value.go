@@ -191,7 +191,14 @@ type FuncRef struct {
 	_inner C.WasmEdge_Value
 }
 
+// NewFuncRef creates a function reference value. Passing nil creates a null
+// function reference.
 func NewFuncRef(funcinst *Function) FuncRef {
+	if funcinst == nil {
+		return FuncRef{
+			_inner: C.WasmEdge_ValueGenFuncRef(nil),
+		}
+	}
 	return FuncRef{
 		_inner: C.WasmEdge_ValueGenFuncRef(funcinst._inner),
 	}
@@ -220,6 +227,14 @@ func NewExternRef(ptr interface{}) ExternRef {
 	idx := externRefMgr.add(ptr)
 	return ExternRef{
 		_inner: C.wasmedgego_GenExternRef(C.uintptr_t(idx)),
+		_valid: true,
+	}
+}
+
+// NewNullExternRef creates a null external reference value.
+func NewNullExternRef() ExternRef {
+	return ExternRef{
+		_inner: C.wasmedgego_GenExternRef(0),
 		_valid: true,
 	}
 }
@@ -282,7 +297,8 @@ func toWasmEdgeValue(value interface{}) C.WasmEdge_Value {
 		return value.(FuncRef)._inner
 	case ExternRef:
 		ref := value.(ExternRef)
-		if !ref._valid || !externRefMgr.has(uint(C.wasmedgego_GetExternRef(ref._inner))) {
+		if !ref._valid ||
+			(!ref.IsNull() && !externRefMgr.has(uint(C.wasmedgego_GetExternRef(ref._inner)))) {
 			panic("External reference is released")
 		}
 		return ref._inner
@@ -340,10 +356,8 @@ func fromWasmEdgeValue(value C.WasmEdge_Value) interface{} {
 	}
 	if C.WasmEdge_ValTypeIsExternRef(value.Type) {
 		idx := uint(C.wasmedgego_GetExternRef(value))
-		if externRefMgr.has(idx) {
-			return ExternRef{_inner: value, _valid: true}
-		}
-		return ExternRef{_inner: value, _valid: false}
+		valid := externRefMgr.has(idx) || bool(C.WasmEdge_ValueIsNullRef(value))
+		return ExternRef{_inner: value, _valid: valid}
 	}
 	if C.WasmEdge_ValTypeIsRef(value.Type) {
 		return Ref{_inner: value}

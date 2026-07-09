@@ -66,3 +66,6 @@ docs/_build
 pkg/
 target/
 Cargo.lock
+
+# Downloaded WASM spec test suites.
+spectest/testdata/
