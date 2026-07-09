@@ -4,8 +4,6 @@ package wasmedge
 import "C"
 import (
 	"encoding/binary"
-	"fmt"
-	"reflect"
 	"sync"
 	"unsafe"
 )
@@ -181,6 +179,10 @@ func NewFuncRef(funcinst *Function) FuncRef {
 	}
 }
 
+func (self FuncRef) IsNull() bool {
+	return bool(C.WasmEdge_ValueIsNullRef(self._inner))
+}
+
 func (self FuncRef) GetRef() *Function {
 	funcinst := C.WasmEdge_ValueGetFuncRef(self._inner)
 	if funcinst != nil {
@@ -205,6 +207,10 @@ func NewExternRef(ptr interface{}) ExternRef {
 	}
 }
 
+func (self ExternRef) IsNull() bool {
+	return bool(C.WasmEdge_ValueIsNullRef(self._inner))
+}
+
 func (self ExternRef) Release() {
 	self._valid = false
 	// Change type back to WasmEdge_ValType_I64 and get the i64 value
@@ -221,17 +227,27 @@ func (self ExternRef) GetRef() interface{} {
 	return nil
 }
 
+// Ref is a generic WASM reference value which is not a function or external
+// reference, e.g. the GC proposal references (anyref, structref, i31ref).
+type Ref struct {
+	_inner C.WasmEdge_Value
+}
+
+func (self Ref) IsNull() bool {
+	return bool(C.WasmEdge_ValueIsNullRef(self._inner))
+}
+
+func (self Ref) GetValType() *ValType {
+	return &ValType{_inner: self._inner.Type}
+}
+
 type V128 struct {
 	_inner C.WasmEdge_Value
 }
 
 func NewV128(high uint64, low uint64) V128 {
 	var cval C.__int128
-	var buf []byte
-	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
-	sliceHeader.Cap = 16
-	sliceHeader.Len = 16
-	sliceHeader.Data = uintptr(unsafe.Pointer(&cval))
+	buf := unsafe.Slice((*byte)(unsafe.Pointer(&cval)), 16)
 	binary.LittleEndian.PutUint64(buf[:8], low)
 	binary.LittleEndian.PutUint64(buf[8:], high)
 	return V128{
@@ -241,11 +257,7 @@ func NewV128(high uint64, low uint64) V128 {
 
 func (self V128) GetVal() (uint64, uint64) {
 	cval := C.WasmEdge_ValueGetV128(self._inner)
-	var buf []byte
-	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
-	sliceHeader.Cap = 16
-	sliceHeader.Len = 16
-	sliceHeader.Data = uintptr(unsafe.Pointer(&cval))
+	buf := unsafe.Slice((*byte)(unsafe.Pointer(&cval)), 16)
 	return binary.LittleEndian.Uint64(buf[8:]), binary.LittleEndian.Uint64(buf[:8])
 }
 
@@ -258,6 +270,8 @@ func toWasmEdgeValue(value interface{}) C.WasmEdge_Value {
 			panic("External reference is released")
 		}
 		return value.(ExternRef)._inner
+	case Ref:
+		return value.(Ref)._inner
 	case V128:
 		return value.(V128)._inner
 	case int:
@@ -316,7 +330,7 @@ func fromWasmEdgeValue(value C.WasmEdge_Value) interface{} {
 		return ExternRef{_inner: value, _valid: false}
 	}
 	if C.WasmEdge_ValTypeIsRef(value.Type) {
-		return "externref"
+		return Ref{_inner: value}
 	}
 	panic("Wrong argument of fromWasmEdgeValue()")
 }
@@ -325,88 +339,6 @@ func toWasmEdgeValueSlide(vals ...interface{}) []C.WasmEdge_Value {
 	cvals := make([]C.WasmEdge_Value, len(vals))
 	for i, val := range vals {
 		cvals[i] = toWasmEdgeValue(val)
-	}
-	return cvals
-}
-
-func toWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, vals ...interface{}) []C.WasmEdge_Value {
-	//cvals := make([]C.WasmEdge_Value, len(vals))
-	cvals := []C.WasmEdge_Value{}
-	if rettype == Bindgen_return_array {
-		// Array result address = 8
-		cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(8)))
-	} else if rettype == Bindgen_return_i64 {
-		// wasm-bindgen magic: Set memory offset for i64 return value
-		cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(0)))
-	}
-	for _, val := range vals {
-		switch t := val.(type) {
-		case FuncRef:
-			panic("toWasmEdgeValueSlideBindgen(): Not support FuncRef now")
-		case ExternRef:
-			panic("toWasmEdgeValueSlideBindgen(): Not support ExternRef now")
-		case V128:
-			panic("toWasmEdgeValueSlideBindgen(): Not support v128 now")
-		case int32:
-			cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(val.(int32))))
-		case uint32:
-			cvals = append(cvals, C.WasmEdge_ValueGenI32(C.int32_t(val.(uint32))))
-		case int64:
-			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64))))
-			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(int64) >> 32)))
-			cvals = append(cvals, vall, valu)
-		case uint64:
-			vall := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64))))
-			valu := C.WasmEdge_ValueGenI32(C.int32_t(uint32(val.(uint64) >> 32)))
-			cvals = append(cvals, vall, valu)
-		case int:
-			panic("toWasmEdgeValueSlideBindgen(): Not support int now, please use int32 or int64 instead")
-		case uint:
-			panic("toWasmEdgeValueSlideBindgen(): Not support uint now, please use uint32 or uint64 instead")
-		case float32:
-			panic("toWasmEdgeValueSlideBindgen(): Not support float32 now")
-		case float64:
-			panic("toWasmEdgeValueSlideBindgen(): Not support float64 now")
-		case []byte:
-			// Call malloc function
-			mallocsize := uint32(len(val.([]byte)))
-			var rets []interface{}
-			var err error = nil
-			if modname == nil {
-				rets, err = vm.Execute("__wbindgen_malloc", mallocsize)
-			} else {
-				rets, err = vm.ExecuteRegistered(*modname, "__wbindgen_malloc", mallocsize)
-			}
-			if err != nil {
-				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
-			}
-			if len(rets) <= 0 {
-				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
-			}
-			argaddr := C.WasmEdge_ValueGenI32(C.int32_t(rets[0].(int32)))
-			argsize := C.WasmEdge_ValueGenI32(C.int32_t(mallocsize))
-			cvals = append(cvals, argaddr, argsize)
-			// Set bytes
-			var mod *Module = nil
-			var mem *Memory = nil
-			if modname == nil {
-				mod = vm.GetActiveModule()
-			} else {
-				store := vm.GetStore()
-				mod = store.FindModule(*modname)
-			}
-			if mod != nil {
-				memnames := mod.ListMemory()
-				if len(memnames) <= 0 {
-					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
-				}
-				mem = mod.FindMemory(memnames[0])
-				mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
-			}
-		default:
-			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
-			panic(errorString)
-		}
 	}
 	return cvals
 }
@@ -420,93 +352,4 @@ func fromWasmEdgeValueSlide(cvals []C.WasmEdge_Value) []interface{} {
 		return vals
 	}
 	return []interface{}{}
-}
-
-func fromWasmEdgeValueSlideBindgen(vm *VM, rettype bindgen, modname *string, cvals []C.WasmEdge_Value) (interface{}, error) {
-	returns := fromWasmEdgeValueSlide(cvals)
-	switch rettype {
-	case Bindgen_return_void:
-		return nil, nil
-	case Bindgen_return_i32:
-		if len(returns) <= 0 {
-			panic("Expected return i32, but got empty")
-		}
-		return returns[0], nil
-	case Bindgen_return_i64:
-		// Get memory context
-		var mod *Module = nil
-		var mem *Memory = nil
-		if modname == nil {
-			mod = vm.GetActiveModule()
-		} else {
-			store := vm.GetStore()
-			mod = store.FindModule(*modname)
-		}
-		if mod != nil {
-			memnames := mod.ListMemory()
-			if len(memnames) > 0 {
-				mem = mod.FindMemory(memnames[0])
-			}
-		}
-		// Get int64
-		if mem == nil {
-			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
-		}
-		buf, err := mem.GetData(0, 8)
-		if err != nil {
-			return nil, err
-		}
-		var num int64 = 0
-		for i, val := range buf {
-			num += int64(val) << (i * 8)
-		}
-		return num, nil
-	case Bindgen_return_array:
-		// Get memory context
-		var mod *Module = nil
-		var mem *Memory = nil
-		if modname == nil {
-			mod = vm.GetActiveModule()
-		} else {
-			store := vm.GetStore()
-			mod = store.FindModule(*modname)
-		}
-		if mod != nil {
-			memnames := mod.ListMemory()
-			if len(memnames) > 0 {
-				mem = mod.FindMemory(memnames[0])
-			}
-		}
-		// Get address and length (array result address = 8)
-		if mem == nil {
-			panic("fromWasmEdgeValueSlideBindgen(): memory instance not found")
-		}
-		buf, err := mem.GetData(8, 8)
-		if err != nil {
-			return nil, err
-		}
-		var num int64 = 0
-		for i, val := range buf {
-			num += int64(val) << (i * 8)
-		}
-		// Get bytes
-		var arraddr = int32(num)
-		var arrlen = int32(num >> 32)
-		buf, err = mem.GetData(uint(arraddr), uint(arrlen))
-		if err != nil {
-			return nil, err
-		}
-		// Free array
-		if modname == nil {
-			_, err = vm.Execute("__wbindgen_free", arraddr, arrlen)
-		} else {
-			_, err = vm.ExecuteRegistered(*modname, "__wbindgen_free", arraddr, arrlen)
-		}
-		if err != nil {
-			panic("fromWasmEdgeValueSlideBindgen(): malloc failed")
-		}
-		return buf, nil
-	default:
-		panic("Wrong expected return type")
-	}
 }

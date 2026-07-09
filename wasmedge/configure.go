@@ -32,6 +32,28 @@ const (
 	WASI = HostRegistration(C.WasmEdge_HostRegistration_Wasi)
 )
 
+type RunMode C.enum_WasmEdge_RunMode
+
+const (
+	// Run the WASM in the interpreter mode (default).
+	RunMode_Interpreter = RunMode(C.WasmEdge_RunMode_Interpreter)
+	// Run the WASM in the just-in-time compilation mode.
+	RunMode_JIT = RunMode(C.WasmEdge_RunMode_JIT)
+	// Run the WASM in the ahead-of-time compilation mode.
+	RunMode_AOT = RunMode(C.WasmEdge_RunMode_AOT)
+)
+
+type WASMStandard C.enum_WasmEdge_Standard
+
+const (
+	// The WebAssembly 1.0 standard.
+	Standard_WASM_1 = WASMStandard(C.WasmEdge_Standard_WASM_1)
+	// The WebAssembly 2.0 standard.
+	Standard_WASM_2 = WASMStandard(C.WasmEdge_Standard_WASM_2)
+	// The WebAssembly 3.0 standard.
+	Standard_WASM_3 = WASMStandard(C.WasmEdge_Standard_WASM_3)
+)
+
 type CompilerOptimizationLevel C.enum_WasmEdge_CompilerOptimizationLevel
 
 const (
@@ -117,19 +139,23 @@ func (self *Configure) RemoveConfig(conf interface{}) {
 }
 
 func (self *Configure) SetMaxMemoryPage(pagesize uint) {
-	C.WasmEdge_ConfigureSetMaxMemoryPage(self._inner, C.uint32_t(pagesize))
+	C.WasmEdge_ConfigureSetMaxMemoryPage(self._inner, C.uint64_t(pagesize))
 }
 
 func (self *Configure) GetMaxMemoryPage() uint {
 	return uint(C.WasmEdge_ConfigureGetMaxMemoryPage(self._inner))
 }
 
-func (self *Configure) SetForceInterpreter(isinterpreter bool) {
-	C.WasmEdge_ConfigureSetForceInterpreter(self._inner, C.bool(isinterpreter))
+func (self *Configure) SetWASMStandard(std WASMStandard) {
+	C.WasmEdge_ConfigureSetWASMStandard(self._inner, C.enum_WasmEdge_Standard(std))
 }
 
-func (self *Configure) IsForceInterpreter() bool {
-	return bool(C.WasmEdge_ConfigureIsForceInterpreter(self._inner))
+func (self *Configure) SetRunMode(mode RunMode) {
+	C.WasmEdge_ConfigureSetRunMode(self._inner, C.enum_WasmEdge_RunMode(mode))
+}
+
+func (self *Configure) GetRunMode() RunMode {
+	return RunMode(C.WasmEdge_ConfigureGetRunMode(self._inner))
 }
 
 func (self *Configure) SetCompilerOptimizationLevel(level CompilerOptimizationLevel) {

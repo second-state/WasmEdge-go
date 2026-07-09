@@ -3,7 +3,6 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 import (
-	"reflect"
 	"sync"
 	"unsafe"
 )
@@ -64,12 +63,8 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, callframe *C.WasmEd
 	}
 
 	goparams := make([]interface{}, uint(paramlen))
-	var cparams []C.WasmEdge_Value
 	if paramlen > 0 {
-		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&cparams)))
-		sliceHeader.Cap = int(paramlen)
-		sliceHeader.Len = int(paramlen)
-		sliceHeader.Data = uintptr(unsafe.Pointer(params))
+		cparams := unsafe.Slice(params, int(paramlen))
 		for i := 0; i < int(paramlen); i++ {
 			goparams[i] = fromWasmEdgeValue(cparams[i])
 			if C.WasmEdge_ValTypeIsExternRef(cparams[i].Type) == true && !goparams[i].(ExternRef)._valid {
@@ -81,12 +76,8 @@ func wasmedgego_HostFuncInvokeImpl(fn uintptr, data *C.void, callframe *C.WasmEd
 	gofunc, godata := hostfuncMgr.get(uint(fn))
 	goreturns, err := gofunc(godata, gocallgrame, goparams)
 
-	var creturns []C.WasmEdge_Value
 	if returnlen > 0 && goreturns != nil {
-		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&creturns)))
-		sliceHeader.Cap = int(returnlen)
-		sliceHeader.Len = int(returnlen)
-		sliceHeader.Data = uintptr(unsafe.Pointer(returns))
+		creturns := unsafe.Slice(returns, int(returnlen))
 		for i, val := range goreturns {
 			if i < int(returnlen) {
 				creturns[i] = toWasmEdgeValue(val)

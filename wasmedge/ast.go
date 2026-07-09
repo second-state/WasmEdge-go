@@ -145,7 +145,7 @@ func (self *FunctionType) GetParameters() []*ValType {
 			cvaltype = make([]C.WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetParameters(self._inner, &(cvaltype[0]), ltypes)
 			for i, val := range cvaltype {
-				valtype[i]._inner = val
+				valtype[i] = &ValType{_inner: val}
 			}
 			return valtype
 		}
@@ -167,7 +167,7 @@ func (self *FunctionType) GetReturns() []*ValType {
 			cvaltype = make([]C.WasmEdge_ValType, uint(ltypes))
 			C.WasmEdge_FunctionTypeGetReturns(self._inner, &(cvaltype[0]), ltypes)
 			for i, val := range cvaltype {
-				valtype[i]._inner = val
+				valtype[i] = &ValType{_inner: val}
 			}
 			return valtype
 		}
@@ -184,13 +184,10 @@ func (self *FunctionType) Release() {
 }
 
 func NewTableType(rtype *ValType, lim *Limit) *TableType {
-	climit := C.WasmEdge_Limit{
-		HasMax: C.bool(lim.hasmax),
-		Shared: C.bool(lim.shared),
-		Min:    C.uint32_t(lim.min),
-		Max:    C.uint32_t(lim.max),
+	if lim == nil || lim._inner == nil {
+		return nil
 	}
-	ttype := C.WasmEdge_TableTypeCreate(rtype._inner, climit)
+	ttype := C.WasmEdge_TableTypeCreate(rtype._inner, lim._inner)
 	if ttype == nil {
 		return nil
 	}
@@ -204,12 +201,10 @@ func (self *TableType) GetRefType() *ValType {
 func (self *TableType) GetLimit() *Limit {
 	if self._inner != nil {
 		climit := C.WasmEdge_TableTypeGetLimit(self._inner)
-		return &Limit{
-			min:    uint(climit.Min),
-			max:    uint(climit.Max),
-			hasmax: bool(climit.HasMax),
-			shared: bool(climit.Shared),
+		if climit == nil {
+			return nil
 		}
+		return &Limit{_inner: climit, _own: false}
 	}
 	return nil
 }
@@ -223,13 +218,10 @@ func (self *TableType) Release() {
 }
 
 func NewMemoryType(lim *Limit) *MemoryType {
-	climit := C.WasmEdge_Limit{
-		HasMax: C.bool(lim.hasmax),
-		Shared: C.bool(lim.shared),
-		Min:    C.uint32_t(lim.min),
-		Max:    C.uint32_t(lim.max),
+	if lim == nil || lim._inner == nil {
+		return nil
 	}
-	mtype := C.WasmEdge_MemoryTypeCreate(climit)
+	mtype := C.WasmEdge_MemoryTypeCreate(lim._inner)
 	if mtype == nil {
 		return nil
 	}
@@ -239,12 +231,10 @@ func NewMemoryType(lim *Limit) *MemoryType {
 func (self *MemoryType) GetLimit() *Limit {
 	if self._inner != nil {
 		climit := C.WasmEdge_MemoryTypeGetLimit(self._inner)
-		return &Limit{
-			min:    uint(climit.Min),
-			max:    uint(climit.Max),
-			hasmax: bool(climit.HasMax),
-			shared: bool(climit.Shared),
+		if climit == nil {
+			return nil
 		}
+		return &Limit{_inner: climit, _own: false}
 	}
 	return nil
 }

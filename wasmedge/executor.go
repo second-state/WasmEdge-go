@@ -70,6 +70,15 @@ func (self *Executor) RegisterImport(store *Store, module *Module) error {
 	return nil
 }
 
+func (self *Executor) RegisterImportWithAlias(store *Store, module *Module, modname string) error {
+	modstr := toWasmEdgeStringWrap(modname)
+	res := C.WasmEdge_ExecutorRegisterImportWithAlias(self._inner, store._inner, module._inner, modstr)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
+}
+
 func (self *Executor) Invoke(funcinst *Function, params ...interface{}) ([]interface{}, error) {
 	ftype := funcinst.GetFunctionType()
 	cparams := toWasmEdgeValueSlide(params...)
