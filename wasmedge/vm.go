@@ -96,6 +96,8 @@ func (self *VM) RegisterModuleWithAlias(modname string, module *Module) error {
 	return nil
 }
 
+// ForceDeleteRegisteredModule deletes the registered module by name and
+// destroys its instance; do not Release any Go wrapper of it afterwards.
 func (self *VM) ForceDeleteRegisteredModule(modname string) {
 	modstr := toWasmEdgeStringWrap(modname)
 	C.WasmEdge_VMForceDeleteRegisteredModule(self._inner, modstr)

@@ -1,6 +1,17 @@
 package wasmedge
 
-// #include <wasmedge/wasmedge.h>
+/*
+#include <wasmedge/wasmedge.h>
+
+// Convert the external reference payload between the Go-side index and the
+// pointer-typed C API. The index is never dereferenced; 0 is ref.null.
+static WasmEdge_Value wasmedgego_GenExternRef(uintptr_t Idx) {
+  return WasmEdge_ValueGenExternRef((void *)Idx);
+}
+static uintptr_t wasmedgego_GetExternRef(WasmEdge_Value Val) {
+  return (uintptr_t)WasmEdge_ValueGetExternRef(Val);
+}
+*/
 import "C"
 import (
 	"encoding/binary"
@@ -156,6 +167,13 @@ func (self *externRefManager) get(i uint) interface{} {
 	return self.ref[i]
 }
 
+func (self *externRefManager) has(i uint) bool {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	_, ok := self.ref[i]
+	return ok
+}
+
 func (self *externRefManager) del(i uint) {
 	self.mu.Lock()
 	defer self.mu.Unlock()
@@ -197,12 +215,11 @@ type ExternRef struct {
 }
 
 func NewExternRef(ptr interface{}) ExternRef {
-	// Gen an i64 WasmEdge_Value and change type to externref
-	idx := uint64(externRefMgr.add(ptr))
-	val := C.WasmEdge_ValueGenI64(C.int64_t(idx))
-	val.Type = C.WasmEdge_ValTypeGenExternRef()
+	// The external reference value holds the index into the Go-side
+	// reference manager instead of a real pointer.
+	idx := externRefMgr.add(ptr)
 	return ExternRef{
-		_inner: val,
+		_inner: C.wasmedgego_GenExternRef(C.uintptr_t(idx)),
 		_valid: true,
 	}
 }
@@ -213,15 +230,13 @@ func (self ExternRef) IsNull() bool {
 
 func (self ExternRef) Release() {
 	self._valid = false
-	// Change type back to WasmEdge_ValType_I64 and get the i64 value
-	idx := uint(C.WasmEdge_ValueGetI64(self._inner))
+	idx := uint(C.wasmedgego_GetExternRef(self._inner))
 	externRefMgr.del(idx)
 }
 
 func (self ExternRef) GetRef() interface{} {
 	if self._valid {
-		// Get the original i64 value
-		idx := uint(C.WasmEdge_ValueGetI64(self._inner))
+		idx := uint(C.wasmedgego_GetExternRef(self._inner))
 		return externRefMgr.get(idx)
 	}
 	return nil
@@ -266,10 +281,11 @@ func toWasmEdgeValue(value interface{}) C.WasmEdge_Value {
 	case FuncRef:
 		return value.(FuncRef)._inner
 	case ExternRef:
-		if !value.(ExternRef)._valid {
+		ref := value.(ExternRef)
+		if !ref._valid || !externRefMgr.has(uint(C.wasmedgego_GetExternRef(ref._inner))) {
 			panic("External reference is released")
 		}
-		return value.(ExternRef)._inner
+		return ref._inner
 	case Ref:
 		return value.(Ref)._inner
 	case V128:
@@ -323,8 +339,8 @@ func fromWasmEdgeValue(value C.WasmEdge_Value) interface{} {
 		return FuncRef{_inner: value}
 	}
 	if C.WasmEdge_ValTypeIsExternRef(value.Type) {
-		idx := uint(C.WasmEdge_ValueGetI64(value))
-		if _, ok := externRefMgr.ref[idx]; ok {
+		idx := uint(C.wasmedgego_GetExternRef(value))
+		if externRefMgr.has(idx) {
 			return ExternRef{_inner: value, _valid: true}
 		}
 		return ExternRef{_inner: value, _valid: false}
