@@ -38,7 +38,6 @@ wasmedgego_FunctionInstanceCreateBindingWrapper(
 import "C"
 import (
 	"errors"
-	"reflect"
 	"unsafe"
 )
 
@@ -114,6 +113,39 @@ func NewWasiModule(args []string, envs []string, preopens []string) *Module {
 	return &Module{_inner: module, _own: true}
 }
 
+func NewWasiModuleWithFds(args []string, envs []string, preopens []string, stdinFd int, stdoutFd int, stderrFd int) *Module {
+	cargs := toCStringArray(args)
+	cenvs := toCStringArray(envs)
+	cpreopens := toCStringArray(preopens)
+	var ptrargs *(*C.char) = nil
+	var ptrenvs *(*C.char) = nil
+	var ptrpreopens *(*C.char) = nil
+	if len(cargs) > 0 {
+		ptrargs = &cargs[0]
+	}
+	if len(cenvs) > 0 {
+		ptrenvs = &cenvs[0]
+	}
+	if len(cpreopens) > 0 {
+		ptrpreopens = &cpreopens[0]
+	}
+
+	module := C.WasmEdge_ModuleInstanceCreateWASIWithFds(
+		ptrargs, C.uint32_t(len(cargs)),
+		ptrenvs, C.uint32_t(len(cenvs)),
+		ptrpreopens, C.uint32_t(len(cpreopens)),
+		C.int32_t(stdinFd), C.int32_t(stdoutFd), C.int32_t(stderrFd))
+
+	freeCStringArray(cargs)
+	freeCStringArray(cenvs)
+	freeCStringArray(cpreopens)
+
+	if module == nil {
+		return nil
+	}
+	return &Module{_inner: module, _own: true}
+}
+
 func (self *Module) InitWasi(args []string, envs []string, preopens []string) {
 	cargs := toCStringArray(args)
 	cenvs := toCStringArray(envs)
@@ -135,6 +167,34 @@ func (self *Module) InitWasi(args []string, envs []string, preopens []string) {
 		ptrargs, C.uint32_t(len(cargs)),
 		ptrenvs, C.uint32_t(len(cenvs)),
 		ptrpreopens, C.uint32_t(len(cpreopens)))
+
+	freeCStringArray(cargs)
+	freeCStringArray(cenvs)
+	freeCStringArray(cpreopens)
+}
+
+func (self *Module) InitWasiWithFds(args []string, envs []string, preopens []string, stdinFd int, stdoutFd int, stderrFd int) {
+	cargs := toCStringArray(args)
+	cenvs := toCStringArray(envs)
+	cpreopens := toCStringArray(preopens)
+	var ptrargs *(*C.char) = nil
+	var ptrenvs *(*C.char) = nil
+	var ptrpreopens *(*C.char) = nil
+	if len(cargs) > 0 {
+		ptrargs = &cargs[0]
+	}
+	if len(cenvs) > 0 {
+		ptrenvs = &cenvs[0]
+	}
+	if len(cpreopens) > 0 {
+		ptrpreopens = &cpreopens[0]
+	}
+
+	C.WasmEdge_ModuleInstanceInitWASIWithFds(self._inner,
+		ptrargs, C.uint32_t(len(cargs)),
+		ptrenvs, C.uint32_t(len(cenvs)),
+		ptrpreopens, C.uint32_t(len(cpreopens)),
+		C.int32_t(stdinFd), C.int32_t(stdoutFd), C.int32_t(stderrFd))
 
 	freeCStringArray(cargs)
 	freeCStringArray(cenvs)
@@ -346,7 +406,7 @@ func (self *Table) GetTableType() *TableType {
 
 func (self *Table) GetData(off uint) (interface{}, error) {
 	cval := C.WasmEdge_Value{}
-	res := C.WasmEdge_TableInstanceGetData(self._inner, &cval, C.uint32_t(off))
+	res := C.WasmEdge_TableInstanceGetData(self._inner, &cval, C.uint64_t(off))
 	if !C.WasmEdge_ResultOK(res) {
 		return nil, newError(res)
 	}
@@ -355,7 +415,7 @@ func (self *Table) GetData(off uint) (interface{}, error) {
 
 func (self *Table) SetData(data interface{}, off uint) error {
 	cval := toWasmEdgeValue(data)
-	res := C.WasmEdge_TableInstanceSetData(self._inner, cval, C.uint32_t(off))
+	res := C.WasmEdge_TableInstanceSetData(self._inner, cval, C.uint64_t(off))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -367,7 +427,7 @@ func (self *Table) GetSize() uint {
 }
 
 func (self *Table) Grow(size uint) error {
-	res := C.WasmEdge_TableInstanceGrow(self._inner, C.uint32_t(size))
+	res := C.WasmEdge_TableInstanceGrow(self._inner, C.uint64_t(size))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -401,17 +461,12 @@ func (self *Memory) GetMemoryType() *MemoryType {
 }
 
 func (self *Memory) GetData(off uint, length uint) ([]byte, error) {
-	p := C.WasmEdge_MemoryInstanceGetPointer(self._inner, C.uint32_t(off), C.uint32_t(length))
+	p := C.WasmEdge_MemoryInstanceGetPointer(self._inner, C.uint64_t(off), C.uint64_t(length))
 	if p == nil {
 		return nil, errors.New("Failed get data pointer")
 	}
-	// Use SliceHeader to wrap the slice from cgo
-	var r []byte
-	s := (*reflect.SliceHeader)(unsafe.Pointer(&r))
-	s.Cap = int(length)
-	s.Len = int(length)
-	s.Data = uintptr(unsafe.Pointer(p))
-	return r, nil
+	// Wrap the WASM linear memory region from cgo as a slice view.
+	return unsafe.Slice((*byte)(unsafe.Pointer(p)), int(length)), nil
 }
 
 func (self *Memory) SetData(data []byte, off uint, length uint) error {
@@ -419,7 +474,7 @@ func (self *Memory) SetData(data []byte, off uint, length uint) error {
 	if len(data) > 0 {
 		ptrdata = (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	}
-	res := C.WasmEdge_MemoryInstanceSetData(self._inner, ptrdata, C.uint32_t(off), C.uint32_t(length))
+	res := C.WasmEdge_MemoryInstanceSetData(self._inner, ptrdata, C.uint64_t(off), C.uint64_t(length))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}
@@ -431,7 +486,7 @@ func (self *Memory) GetPageSize() uint {
 }
 
 func (self *Memory) GrowPage(size uint) error {
-	res := C.WasmEdge_MemoryInstanceGrowPage(self._inner, C.uint32_t(size))
+	res := C.WasmEdge_MemoryInstanceGrowPage(self._inner, C.uint64_t(size))
 	if !C.WasmEdge_ResultOK(res) {
 		return newError(res)
 	}

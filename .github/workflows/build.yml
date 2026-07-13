@@ -22,7 +22,7 @@ jobs:
       USE_BAZEL_VERSION: 7.4.1
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
+        go: [ '1.25.x', '1.26.x' ]
     name: Build WasmEdge-go on Ubuntu 24.04 x86_64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v6
@@ -34,11 +34,15 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install_v2.sh | bash -s -- -v 0.17.1
       - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
+      - name: Unit tests
+        run: |
+          source $HOME/.wasmedge/env
+          go test ./wasmedge/ -count=1
       - name: Bazel Test
         run: |
           bazel test //... \
@@ -56,8 +60,8 @@ jobs:
       USE_BAZEL_VERSION: 7.4.1
     strategy:
       matrix:
-        go: [ '1.22.x', '1.23.x' ]
-    name: Build WasmEdge-go on MacOS 14 x86_64 with Go ${{ matrix.go }}
+        go: [ '1.25.x', '1.26.x' ]
+    name: Build WasmEdge-go on macOS 14 arm64 with Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v6
       - name: Install go
@@ -68,12 +72,15 @@ jobs:
         run: go version
       - name: Install wasmedge
         run: |
-          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
+          wget -qO- https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install_v2.sh | bash -s -- -v 0.17.1
       - name: Build WasmEdge-go
         run: |
           source $HOME/.wasmedge/env
           go build ./wasmedge/
-
+      - name: Unit tests
+        run: |
+          source $HOME/.wasmedge/env
+          go test ./wasmedge/ -count=1
       - name: Bazel Test
         run: |
           bazel test //... \

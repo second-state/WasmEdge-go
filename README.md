@@ -8,24 +8,24 @@ The [WasmEdge](https://github.com/WasmEdge/WasmEdge) is a high performance WebAs
 
 ## Getting Started
 
-The `WasmEdge-go` requires `golang` version >= `1.22`. Please check your `golang` version before installation.
+The `WasmEdge-go` requires `golang` version >= `1.25`. Please check your `golang` version before installation.
 Developers can [download golang here](https://golang.org/dl/).
 
 ```bash
 $ go version
-go version go1.23.1 linux/amd64
+go version go1.25.0 linux/amd64
 ```
 
 Developers must [install the WasmEdge shared library](https://wasmedge.org/docs/start/install) with the same `WasmEdge-go` release version.
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.14.0
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install_v2.sh | bash -s -- -v 0.17.1
 ```
 
 For the developers need the `WasmEdge-TensorFlow` or `WasmEdge-Image` plug-ins for `WasmEdge-go`, please install the `WasmEdge` with the corresponding plug-ins:
 
 ```bash
-curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.14.0
+curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- --plugins wasmedge_tensorflow wasmedge_tensorflowlite wasmedge_image -v 0.17.1
 ```
 
 > Note: Please refer to the [install guide for plug-ins](https://wasmedge.org/docs/start/install/#install-wasmedge-plug-ins-and-dependencies) to check that you've installed the plug-ins with their dependencies.
@@ -35,6 +35,22 @@ For examples, please refer to the [example repository](https://github.com/second
 ## WasmEdge-go Documentation
 
 Please refer to the [API Documentation](https://wasmedge.org/docs/embed/go/reference/latest) for details.
+
+## Testing
+
+The `wasmedge` package ships unit tests, and the `spectest` package runs the
+WASM specification test suites in the interpreter, AOT, and JIT modes:
+
+```bash
+# Unit tests of the API surface:
+go test ./wasmedge/
+
+# WASM spec tests (the suite is downloaded and cached on the first run):
+go test ./spectest/ -run TestSpecInterpreter
+go test ./spectest/ -timeout 60m    # all of interpreter, AOT, and JIT
+```
+
+See [spectest/README.md](spectest/README.md) for details.
 
 ## Bazel Support on Windows
 

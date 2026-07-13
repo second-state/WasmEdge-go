@@ -40,7 +40,7 @@ func (self *Compiler) Compile(inpath string, outpath string) error {
 	return nil
 }
 
-func (self *Compiler) CompileBuffer(buf []byte, outpath string) (error) {
+func (self *Compiler) CompileBuffer(buf []byte, outpath string) error {
 	coutpath := C.CString(outpath)
 	defer C.free(unsafe.Pointer(coutpath))
 	cbytes := C.WasmEdge_BytesWrap((*C.uint8_t)(unsafe.Pointer(&buf[0])), C.uint32_t(len(buf)))

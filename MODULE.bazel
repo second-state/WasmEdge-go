@@ -1,14 +1,14 @@
 module(
     name = "wasmedge_go",
-    version = "0.14.0",
+    version = "0.17.1",
 )
 
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "rules_go", version = "0.50.1", repo_name = "io_bazel_rules_go")
-bazel_dep(name = "gazelle", version = "0.38.0")
+bazel_dep(name = "rules_go", version = "0.61.1", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "gazelle", version = "0.51.3")
 
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.download(version = "1.23.0")
+go_sdk.download(version = "1.25.0")
 use_repo(go_sdk, "go_toolchains")
 
 register_toolchains("@go_toolchains//:all")
@@ -30,9 +30,7 @@ cc_library(
     }),
     hdrs = glob(["**/include/**/*"], allow_empty = True),
     includes = [
-        "WasmEdge-0.14.0-Linux/include",
-        "WasmEdge-0.14.0-Darwin/include",
-        "WasmEdge-0.14.0-Windows/include",
+        "WasmEdge-0.17.1-Windows/include",
         "include",
         ".",
     ],
@@ -40,8 +38,8 @@ cc_library(
 )
 """,
     urls = [
-        "https://github.com/WasmEdge/WasmEdge/releases/download/0.14.0/WasmEdge-0.14.0-ubuntu20.04_x86_64.tar.gz",
-        "https://github.com/WasmEdge/WasmEdge/releases/download/0.14.0/WasmEdge-0.14.0-darwin_aarch64.tar.gz",
-        "https://github.com/WasmEdge/WasmEdge/releases/download/0.14.0/WasmEdge-0.14.0-windows_x86_64.zip",
+        "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/WasmEdge-0.17.1-ubuntu20.04_x86_64.tar.gz",
+        "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/WasmEdge-0.17.1-darwin_arm64.tar.gz",
+        "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/WasmEdge-0.17.1-windows.zip",
     ],
 )

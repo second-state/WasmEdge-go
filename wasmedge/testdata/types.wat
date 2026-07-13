@@ -1,0 +1,13 @@
+(module
+  (import "env" "host_add" (func $host_add (param i32 i32) (result i32)))
+  (import "env" "host_glob" (global $hg i32))
+  (func $add (export "add") (param i32 i32) (result i32)
+    (i32.add (local.get 0) (local.get 1)))
+  (func (export "call_add") (param i32 i32) (result i32)
+    (call $host_add (local.get 0) (local.get 1)))
+  (func (export "get_hglob") (result i32)
+    (global.get $hg))
+  (table (export "tab") 5 20 funcref)
+  (elem (i32.const 0) $add)
+  (memory (export "mem") 1 2)
+  (global (export "glob") (mut i64) (i64.const 88)))

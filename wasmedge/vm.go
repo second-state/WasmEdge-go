@@ -17,15 +17,6 @@ type VM struct {
 	_own   bool
 }
 
-type bindgen int
-
-const (
-	Bindgen_return_void  bindgen = iota
-	Bindgen_return_i32   bindgen = iota
-	Bindgen_return_i64   bindgen = iota
-	Bindgen_return_array bindgen = iota
-)
-
 func NewVM() *VM {
 	vm := C.WasmEdge_VMCreate(nil, nil)
 	if vm == nil {
@@ -94,6 +85,22 @@ func (self *VM) RegisterModule(module *Module) error {
 		return newError(res)
 	}
 	return nil
+}
+
+func (self *VM) RegisterModuleWithAlias(modname string, module *Module) error {
+	modstr := toWasmEdgeStringWrap(modname)
+	res := C.WasmEdge_VMRegisterModuleFromImportWithAlias(self._inner, modstr, module._inner)
+	if !C.WasmEdge_ResultOK(res) {
+		return newError(res)
+	}
+	return nil
+}
+
+// ForceDeleteRegisteredModule deletes the registered module by name and
+// destroys its instance; do not Release any Go wrapper of it afterwards.
+func (self *VM) ForceDeleteRegisteredModule(modname string) {
+	modstr := toWasmEdgeStringWrap(modname)
+	C.WasmEdge_VMForceDeleteRegisteredModule(self._inner, modstr)
 }
 
 func (self *VM) runWasm(funcname string, params ...interface{}) ([]interface{}, error) {
@@ -266,34 +273,6 @@ func (self *VM) AsyncExecute(funcname string, params ...interface{}) *Async {
 	return &Async{_inner: async, _own: true}
 }
 
-// Special execute function for running with wasm-bindgen.
-func (self *VM) ExecuteBindgen(funcname string, rettype bindgen, params ...interface{}) (interface{}, error) {
-	funcstr := toWasmEdgeStringWrap(funcname)
-	ftype := self.GetFunctionType(funcname)
-	if ftype == nil {
-		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
-		ftype = &FunctionType{_inner: nil, _own: false}
-	}
-	cparams := toWasmEdgeValueSlideBindgen(self, rettype, nil, params...)
-	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
-	var ptrparams *C.WasmEdge_Value = nil
-	var ptrreturns *C.WasmEdge_Value = nil
-	if len(cparams) > 0 {
-		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
-	}
-	if len(creturns) > 0 {
-		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
-	}
-	res := C.WasmEdge_VMExecute(
-		self._inner, funcstr,
-		ptrparams, C.uint32_t(len(cparams)),
-		ptrreturns, C.uint32_t(len(creturns)))
-	if !C.WasmEdge_ResultOK(res) {
-		return nil, newError(res)
-	}
-	return fromWasmEdgeValueSlideBindgen(self, rettype, nil, creturns)
-}
-
 func (self *VM) ExecuteRegistered(modname string, funcname string, params ...interface{}) ([]interface{}, error) {
 	modstr := toWasmEdgeStringWrap(modname)
 	funcstr := toWasmEdgeStringWrap(funcname)
@@ -335,36 +314,6 @@ func (self *VM) AsyncExecuteRegistered(modname string, funcname string, params .
 		return nil
 	}
 	return &Async{_inner: async, _own: true}
-}
-
-// Special execute function for running with wasm-bindgen.
-func (self *VM) ExecuteBindgenRegistered(modname string, funcname string, rettype bindgen, params ...interface{}) (interface{}, error) {
-	modstr := toWasmEdgeStringWrap(modname)
-	funcstr := toWasmEdgeStringWrap(funcname)
-	ftype := self.GetFunctionType(funcname)
-	if ftype == nil {
-		// If get function type failed, set as NULL and keep running to let the VM to handle the error.
-		ftype = &FunctionType{_inner: nil, _own: false}
-	}
-	cparams := toWasmEdgeValueSlideBindgen(self, rettype, &modname, params...)
-	creturns := make([]C.WasmEdge_Value, ftype.GetReturnsLength())
-	var ptrparams *C.WasmEdge_Value = nil
-	var ptrreturns *C.WasmEdge_Value = nil
-	if len(cparams) > 0 {
-		ptrparams = (*C.WasmEdge_Value)(unsafe.Pointer(&cparams[0]))
-	}
-	if len(creturns) > 0 {
-		ptrreturns = (*C.WasmEdge_Value)(unsafe.Pointer(&creturns[0]))
-	}
-
-	res := C.WasmEdge_VMExecuteRegistered(
-		self._inner, modstr, funcstr,
-		ptrparams, C.uint32_t(len(cparams)),
-		ptrreturns, C.uint32_t(len(creturns)))
-	if !C.WasmEdge_ResultOK(res) {
-		return nil, newError(res)
-	}
-	return fromWasmEdgeValueSlideBindgen(self, rettype, &modname, creturns)
 }
 
 func (self *VM) GetFunctionType(funcname string) *FunctionType {
