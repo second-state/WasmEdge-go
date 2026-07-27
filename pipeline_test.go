@@ -2,7 +2,7 @@ package wasmedge
 
 import (
 	"errors"
-	"os"
+	"runtime"
 	"sync/atomic"
 	"testing"
 
@@ -27,8 +27,8 @@ func TestLoadValidate(t *testing.T) {
 		exports[0].ExternalType() != ExternalTypeFunction {
 		t.Fatalf("exports: %+v", exports)
 	}
-	ft := exports[0].FunctionType()
-	if ft == nil || len(ft.Parameters()) != 2 || len(ft.Results()) != 1 {
+	ft, ok := exports[0].FunctionType()
+	if !ok || len(ft.Params) != 2 || len(ft.Results) != 1 {
 		t.Fatal("unexpected add signature")
 	}
 
@@ -60,8 +60,9 @@ func TestLoadImports(t *testing.T) {
 		t.Fatalf("imports: %+v", imports)
 	}
 	imp := imports[0]
+	_, ok := imp.FunctionType()
 	if imp.ModuleName() != "env" || imp.Name() != "host_add" ||
-		imp.ExternalType() != ExternalTypeFunction || imp.FunctionType() == nil {
+		imp.ExternalType() != ExternalTypeFunction || !ok {
 		t.Fatalf("import: %s.%s (%s)", imp.ModuleName(), imp.Name(), imp.ExternalType())
 	}
 }
@@ -93,18 +94,6 @@ func TestLoadFailureIsTypedAndLogged(t *testing.T) {
 }
 
 func TestSerializeRoundTrip(t *testing.T) {
-	// UPSTREAM BUG (WasmEdge 0.17.0-168-gad9d34498, 2026-07-02):
-	// WasmEdge_LoaderSerializeASTModule aborts the process with
-	// "libc++abi: terminating due to uncaught exception of type
-	// std::__1::system_error: mutex lock failed" on a module that parses
-	// fine. Reproduced with a pure-C program (no Go involved), so the
-	// binding call is correct; the fault is in the engine's Serialize
-	// component (lib/loader/loader.cpp:235 -> Ser.serializeModule).
-	// Re-enable by exporting WASMEDGE_TEST_SERIALIZE=1 once fixed upstream.
-	if os.Getenv("WASMEDGE_TEST_SERIALIZE") == "" {
-		t.Skip("skipped: upstream WasmEdge_LoaderSerializeASTModule crash (see comment)")
-	}
-
 	loader, err := NewLoader(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -118,6 +107,13 @@ func TestSerializeRoundTrip(t *testing.T) {
 	defer ast.Close()
 
 	b, err := loader.Serialize(ast)
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		if !errors.Is(err, ErrSerializeUnsupported) ||
+			!errors.Is(err, errors.ErrUnsupported) {
+			t.Fatalf("darwin/arm64 serialization: %v", err)
+		}
+		return
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,8 +156,76 @@ func TestStatistics(t *testing.T) {
 	if s == nil {
 		t.Fatal("NewStatistics returned nil")
 	}
+	defer s.Close()
 	if got := s.InstrCount(); got != 0 {
 		t.Fatalf("fresh collector counted %d instructions", got)
+	}
+
+	// Cover the full opcode space with unit costs, then make any non-trivial
+	// invocation exceed the limit.
+	costs := make([]uint64, 512)
+	for i := range costs {
+		costs[i] = 20
+	}
+	if err := s.SetCostTable(costs); err != nil {
+		t.Fatal(err)
+	}
+	s.SetCostLimit(1)
+
+	exec, err := NewExecutor(
+		&Config{Stats: StatsConfig{InstructionCounting: true, CostMeasuring: true}},
+		WithStats(s),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer exec.Close()
+	if exec.stats != s {
+		t.Fatal("Executor did not retain its Statistics collector")
+	}
+
+	loader, err := NewLoader(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer loader.Close()
+	ast, err := loader.LoadBytes(testwasm.AddModule())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ast.Close()
+	validator, err := NewValidator(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer validator.Close()
+	if err := validator.Validate(ast); err != nil {
+		t.Fatal(err)
+	}
+	store := NewStore()
+	defer store.Close()
+	inst, err := exec.Instantiate(store, ast)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer inst.Close()
+	add, ok := inst.Function("add")
+	if !ok {
+		t.Fatal("add export not found")
+	}
+	_, err = exec.Invoke(add, I32(1), I32(2))
+	var we *Error
+	if !errors.As(err, &we) || we.Code != ErrCodeCostLimitExceeded {
+		t.Fatalf("cost limit: want ErrCodeCostLimitExceeded, got %v (cost=%d instructions=%d)",
+			err, s.TotalCost(), s.InstrCount())
+	}
+
+	s.Clear()
+	if got := s.TotalCost(); got != 0 {
+		t.Fatalf("Clear left total cost %d", got)
+	}
+	if err := exec.Close(); err != nil {
+		t.Fatal(err)
 	}
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
@@ -169,6 +233,29 @@ func TestStatistics(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal("double Close must be a no-op")
 	}
-	// Execution-driven assertions (cost limits, instruction counts) are
-	// extended alongside intern task A2 once Executor invocation exists.
+}
+
+func TestExecutorStatisticsLifetime(t *testing.T) {
+	closed := NewStatistics()
+	if err := closed.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewExecutor(nil, WithStats(closed)); !errors.Is(err, ErrClosed) {
+		t.Fatalf("closed statistics: got %v, want ErrClosed", err)
+	}
+
+	stats := NewStatistics()
+	exec, err := NewExecutor(nil, WithStats(stats))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := stats.Close(); !errors.Is(err, ErrInUse) {
+		t.Fatalf("close attached statistics: got %v, want ErrInUse", err)
+	}
+	if err := exec.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := stats.Close(); err != nil {
+		t.Fatalf("close statistics after executor: %v", err)
+	}
 }

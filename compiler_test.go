@@ -13,8 +13,7 @@ func TestCompilerAOT(t *testing.T) {
 		Compiler: CompilerConfig{OutputFormat: OutputFormatWasm},
 	})
 	if err != nil {
-		var we *Error
-		if errors.As(err, &we) && we.Code == ErrCodeAOTDisabled {
+		if errors.Is(err, ErrUnavailable) {
 			t.Skip("library built without the AOT backend")
 		}
 		t.Fatal(err)
@@ -27,7 +26,7 @@ func TestCompilerAOT(t *testing.T) {
 	}
 
 	// The universal-WASM artifact must run and produce identical results.
-	// (Staged path; the RunFile convenience is intern task A4.)
+	// Exercise the staged file path independently from RunFile.
 	vm, err := NewVM(nil)
 	if err != nil {
 		t.Fatal(err)

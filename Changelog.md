@@ -1,3 +1,74 @@
+### v2.0.0 (unreleased)
+
+This is a ground-up alpha-candidate redesign for the stable WasmEdge 0.17.1 C API.
+The module path is now `github.com/second-state/WasmEdge-go/v2`, with the Go
+package at the module root. Go 1.25 or 1.26 is required.
+
+Breaking changes:
+
+* Replaced C-shaped `Result`, `Release`, getter prefixes, and
+  `interface{}`-based values with Go `error`, explicit `Close`, idiomatic
+  names, and typed `Value` constructors/accessors.
+* Made configuration and function/table/memory/global/tag descriptors plain
+  Go values with no native lifetime.
+* Added `Config.Effective()` to inspect native defaults and declarative
+  overrides; corrected the documented 0.17.1 compiler defaults to O3 and
+  universal Wasm output.
+* Changed `Statistics.SetCostTable` to return `error` so ABI count overflow is
+  reported rather than narrowed.
+* Defined explicit owned, borrowed, transferred, retained, and in-flight
+  resource contracts; native teardown is deterministic and explicit-only.
+
+Features and safety:
+
+* Added both a high-level `VM` workflow and the explicit
+  Loader/Validator/Executor/Store pipeline.
+* Added reflective and explicit host functions, original Go error identity,
+  panic containment, typed reference values, and `CallContext.Context`.
+* Added context-aware execution, a manually managed `Execution` API from both
+  `VM.ExecuteAsync` and `Executor.InvokeAsync`, and protection for WasmEdge
+  0.17.1's cancellation-token completion race.
+* Added safe copying memory access, opt-in zero-copy views, reference rooting,
+  external Store dependency tracking, and opaque C tokens for Go callbacks
+  and host data.
+* Enforced memory/table proposal bounds, exact typed-reference table/global
+  assignments, non-nullable reference initialization, checked native count
+  conversions, verified concrete memory allocation, host-index table guards,
+  safe unknown error-code formatting, and open Unix WASI fds.
+* Added shared wrapper lifetime state, callback-scope copy invalidation,
+  transactional and classic-kind-preflighted invocation references,
+  canonical host funcref/import-cycle rejection, race-free callback registry
+  publication and teardown, and deterministic async host-error draining.
+* Added provenance-checked WASI with default-empty VM fd tables, required
+  explicit discard/inherit/redirect stdio policies, immutable 0.17.1
+  stdio/preopen mappings with repeatable args/env initialization, plugins,
+  AOT compiler bindings, logging, statistics, and the 0.17.1 error/type
+  surface.
+* Made Windows discard stdio use WasmEdge's UCRT fd namespace rather than
+  MinGW's separate CRT table, with exact native HANDLE verification and
+  binding-owned teardown.
+* Reject embedded NUL bytes before passing paths, WASI/plugin/process lists, or
+  argv to NUL-terminated C APIs; fallible APIs match `ErrInvalidArgument` and
+  Driver helpers return exit code 2.
+* Accounted for all 291 stable-header/plugin-provider export declarations:
+  272 direct bindings, 16 idiomatic semantic equivalents, two documented
+  runtime omissions, and one provider-side non-goal. Added a checked-in
+  per-symbol manifest and an official-SDK verifier enforced by CI.
+* Added Go 1.25/1.26 CI on Ubuntu 24.04, macOS 15, and Windows 2025,
+  race/leak/cgo-pointer checks, exact 0.17 ELF ABI checks, runnable examples,
+  migration documentation, an external-consumer build, and Bazel system-SDK
+  tests on every host OS. The refreshed matrix awaits an exact-commit hosted
+  run.
+* Restored Bazel support with Bazel 9.2.0, rules_go 0.62.0, Go 1.26.5, and an
+  explicit caller-provided WasmEdge SDK repository.
+
+Known upstream constraints:
+
+* The official WasmEdge 0.17.1 `darwin/arm64` artifact can abort in
+  `Loader.Serialize`; the binding returns `ErrSerializeUnsupported` before
+  native entry on that platform.
+* Official 0.17.1 SDKs do not export the build-conditional WASI-NN RPC driver.
+
 ### v0.14.0 (2025-02-14)
 
 Breaking Changes:

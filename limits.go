@@ -10,13 +10,26 @@ import "C"
 // Since WasmEdge 0.17 the C API models this as a heap-allocated
 // WasmEdge_LimitContext (Memory64 and Threads made it grow flags); the Go
 // API keeps it a plain struct and materializes the C object only inside
-// type constructors, so there is nothing for the caller to Close.
+// resource constructors, so there is nothing for the caller to Close.
 type Limits struct {
 	Min    uint64
 	Max    uint64 // meaningful only when HasMax
 	HasMax bool
 	Shared bool // Threads proposal: shared memory (requires HasMax)
 	Is64   bool // Memory64 proposal: 64-bit addressing
+}
+
+// Equal reports whether l and other describe the same WasmEdge limit.
+// Max is ignored when both limits omit it, matching the native API.
+func (l Limits) Equal(other Limits) bool {
+	left, freeLeft := l.build()
+	defer freeLeft()
+	right, freeRight := other.build()
+	defer freeRight()
+	if left == nil || right == nil {
+		return false
+	}
+	return bool(C.WasmEdge_LimitIsEqual(left, right))
 }
 
 // build materializes a caller-owned C limit; every consumer copies it

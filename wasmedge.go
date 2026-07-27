@@ -3,6 +3,11 @@ package wasmedge
 /*
 #include <wasmedge/wasmedge.h>
 
+#if WASMEDGE_VERSION_MAJOR != 0 || WASMEDGE_VERSION_MINOR != 17 || \
+    WASMEDGE_VERSION_PATCH < 1
+#error "WasmEdge-go v2 requires WasmEdge headers >= 0.17.1 and < 0.18.0"
+#endif
+
 static const char *wasmedgego_headerVersion(void) { return WASMEDGE_VERSION; }
 */
 import "C"
@@ -10,7 +15,7 @@ import "C"
 import "fmt"
 
 // Version returns the full version string of the loaded WasmEdge shared
-// library, for example "0.17.0".
+// library, for example "0.17.1".
 func Version() string {
 	return C.GoString(C.WasmEdge_VersionGet())
 }
@@ -32,12 +37,13 @@ func VersionPatch() uint32 { return uint32(C.WasmEdge_VersionGetPatch()) }
 func init() {
 	headerMajor := uint32(C.WASMEDGE_VERSION_MAJOR)
 	headerMinor := uint32(C.WASMEDGE_VERSION_MINOR)
-	if VersionMajor() != headerMajor || VersionMinor() != headerMinor {
+	if VersionMajor() != headerMajor || VersionMinor() != headerMinor || VersionPatch() < 1 {
 		panic(fmt.Sprintf(
 			"wasmedge: version mismatch: binding compiled against headers %s (%d.%d) "+
-				"but the loaded libwasmedge is %s (%d.%d); align the library and headers "+
+				"but the loaded libwasmedge is %s (%d.%d.%d); WasmEdge-go v2 requires "+
+				"libwasmedge >= 0.17.1 and < 0.18.0; align the library and headers "+
 				"(see CGO_CFLAGS/CGO_LDFLAGS in the package docs)",
 			C.GoString(C.wasmedgego_headerVersion()), headerMajor, headerMinor,
-			Version(), VersionMajor(), VersionMinor()))
+			Version(), VersionMajor(), VersionMinor(), VersionPatch()))
 	}
 }

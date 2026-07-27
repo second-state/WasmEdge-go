@@ -17,11 +17,17 @@ func LoadPluginsFromDefaultPaths() {
 	C.WasmEdge_PluginLoadWithDefaultPaths()
 }
 
-// LoadPlugins loads plugins from a specific file or directory path.
-func LoadPlugins(path string) {
+// LoadPlugins loads plugins from a specific file or directory path. An
+// embedded NUL byte is rejected with ErrInvalidArgument because the native
+// API accepts a NUL-terminated path.
+func LoadPlugins(path string) error {
+	if err := validateCString("plugin path", path); err != nil {
+		return err
+	}
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	C.WasmEdge_PluginLoadFromPath(cpath)
+	return nil
 }
 
 // PluginNames lists the names of all loaded plugins.
@@ -39,6 +45,10 @@ type Plugin struct {
 	ptr *C.WasmEdge_PluginContext
 }
 
+func (p *Plugin) valid() bool {
+	return p != nil && p.ptr != nil
+}
+
 // FindPlugin looks up a loaded plugin by name.
 func FindPlugin(name string) (*Plugin, bool) {
 	cname := newWEString(name)
@@ -52,14 +62,41 @@ func FindPlugin(name string) (*Plugin, bool) {
 
 // Name returns the plugin's name.
 func (p *Plugin) Name() string {
+	if !p.valid() {
+		return ""
+	}
 	defer runtime.KeepAlive(p)
 	return goString(C.WasmEdge_PluginGetPluginName(p.ptr))
 }
 
+// ModuleNames lists the modules that p can instantiate. The returned names
+// are Go-owned copies and remain valid for the lifetime of the process.
+func (p *Plugin) ModuleNames() []string {
+	if !p.valid() {
+		return nil
+	}
+	defer runtime.KeepAlive(p)
+	return listStrings(
+		func() C.uint32_t {
+			return C.WasmEdge_PluginListModuleLength(p.ptr)
+		},
+		func(buf *C.WasmEdge_String, n C.uint32_t) C.uint32_t {
+			return C.WasmEdge_PluginListModule(p.ptr, buf, n)
+		})
+}
+
 // CreateModule instantiates one of the plugin's named modules. The caller
-// owns the result and must Close it (or hand it to a VM/Store as an
-// import, keeping it alive meanwhile).
+// owns the result and must Close it. A VM registration leases it until
+// Reset/Close. A direct Store registration is automatically removed by
+// Module.Close unless an instantiated dependant still imports it.
 func (p *Plugin) CreateModule(name string) (*Module, error) {
+	if !p.valid() {
+		return nil, &Error{
+			Category: ErrCategoryWASM,
+			Code:     ErrCodeRuntimeError,
+			Message:  "plugin module creation failed: invalid plugin",
+		}
+	}
 	defer runtime.KeepAlive(p)
 	cname := newWEString(name)
 	defer freeWEString(cname)
@@ -71,15 +108,16 @@ func (p *Plugin) CreateModule(name string) (*Module, error) {
 	return ownedModule(ptr), nil
 }
 
-// TODO(intern-easy): A5 — bind the remaining plugin APIs:
-//
-//	(*Plugin) ModuleNames() []string -> WasmEdge_PluginListModule /
-//	    WasmEdge_PluginListModuleLength (pattern: PluginNames above,
-//	    with the plugin pointer + KeepAlive like Name)
-//	InitWASINN(preloads []string)    -> WasmEdge_PluginInitWASINN
-//	    (pattern: cStringArray usage in wasi.go)
-//
-// Add plugin_test.go: PluginNames()/FindPlugin round-trip guarded by a
-// t.Skip when no plugins are present on the host, plus a ModuleNames
-// assertion against one loaded plugin (wasi_logging ships with most
-// installs).
+// InitWASINN initializes the loaded wasi_nn plugin with its model preloads.
+// Call it after loading plugins and before creating a wasi_nn module.
+// An empty or nil slice is passed to WasmEdge as a NULL, zero-length list.
+// An embedded NUL byte in any preload is rejected with ErrInvalidArgument.
+func InitWASINN(preloads []string) error {
+	if err := validateCStringSlice("WASI-NN preload", preloads); err != nil {
+		return err
+	}
+	cpreloads, npreloads, freePreloads := cStringArray(preloads)
+	defer freePreloads()
+	C.WasmEdge_PluginInitWASINN(cpreloads, npreloads)
+	return nil
+}

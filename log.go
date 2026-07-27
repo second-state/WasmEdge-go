@@ -13,6 +13,7 @@ import (
 // LogLevel is a WasmEdge engine log severity.
 type LogLevel int32
 
+// Log level values include WasmEdge severities and their slog extensions.
 const (
 	LogLevelTrace    LogLevel = C.WasmEdge_LogLevel_Trace
 	LogLevelDebug    LogLevel = C.WasmEdge_LogLevel_Debug
@@ -20,6 +21,11 @@ const (
 	LogLevelWarn     LogLevel = C.WasmEdge_LogLevel_Warn
 	LogLevelError    LogLevel = C.WasmEdge_LogLevel_Error
 	LogLevelCritical LogLevel = C.WasmEdge_LogLevel_Critical
+
+	// SlogLevelTrace and SlogLevelCritical preserve WasmEdge's severities on
+	// slog's open-ended level scale.
+	SlogLevelTrace    slog.Level = slog.LevelDebug - 4
+	SlogLevelCritical slog.Level = slog.LevelError + 4
 )
 
 func (l LogLevel) String() string {
@@ -79,32 +85,45 @@ func SetLogCallback(cb func(LogMessage)) {
 	C.wasmedgego_setLogCallback(1)
 }
 
-// RouteLogsToSlog forwards engine logs to a slog.Logger.
-//
-// TODO(intern-medium): A11 — finish the slog bridge: map LogLevelTrace and
-// LogLevelCritical onto slog levels (slog has no direct equivalents; use
-// custom levels below Debug / above Error), attach LoggerName and ThreadID
-// as attrs (already sketched below), preserve msg.Time via slog.Record, and
-// add log_test.go asserting a record round-trip through a slog.Handler test
-// double. Pattern: the switch in LogLevel.String above; test pattern:
-// errors_test.go table tests.
+// SlogLevel maps the WasmEdge severity to slog's level scale.
+func (l LogLevel) SlogLevel() slog.Level {
+	switch l {
+	case LogLevelTrace:
+		return SlogLevelTrace
+	case LogLevelDebug:
+		return slog.LevelDebug
+	case LogLevelInfo:
+		return slog.LevelInfo
+	case LogLevelWarn:
+		return slog.LevelWarn
+	case LogLevelError:
+		return slog.LevelError
+	case LogLevelCritical:
+		return SlogLevelCritical
+	default:
+		return slog.LevelInfo
+	}
+}
+
+// RouteLogsToSlog forwards engine logs to a slog.Logger, preserving the
+// native timestamp, logger name, thread ID, and all six severity levels.
 func RouteLogsToSlog(l *slog.Logger) {
 	if l == nil {
 		SetLogCallback(nil)
 		return
 	}
 	SetLogCallback(func(m LogMessage) {
-		lvl := slog.LevelInfo
-		switch m.Level {
-		case LogLevelDebug:
-			lvl = slog.LevelDebug
-		case LogLevelWarn:
-			lvl = slog.LevelWarn
-		case LogLevelError, LogLevelCritical:
-			lvl = slog.LevelError
+		ctx := context.Background()
+		handler := l.Handler()
+		level := m.Level.SlogLevel()
+		if !handler.Enabled(ctx, level) {
+			return
 		}
-		l.LogAttrs(context.Background(), lvl, m.Message,
+		record := slog.NewRecord(m.Time, level, m.Message, 0)
+		record.AddAttrs(
 			slog.String("logger", m.LoggerName),
-			slog.Uint64("thread_id", m.ThreadID))
+			slog.Uint64("thread_id", m.ThreadID),
+		)
+		_ = handler.Handle(ctx, record)
 	})
 }

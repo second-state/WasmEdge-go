@@ -9,7 +9,8 @@ import "C"
 
 import (
 	"fmt"
-	"runtime/cgo"
+	"runtime"
+	"runtime/debug"
 	"time"
 	"unsafe"
 )
@@ -35,32 +36,41 @@ func wasmedgego_logCallback(msg *C.WasmEdge_LogMessage) {
 
 // wasmedgego_hostFuncInvoke is the single trampoline behind every host
 // function: the engine calls the C shim (shims.c), which forwards here with
-// the cgo.Handle of the registered hostFuncEntry. The engine guarantees the
+// a package-allocated opaque C token. The engine guarantees the
 // params and returns arrays match the function type's arities.
 //
 //export wasmedgego_hostFuncInvoke
-func wasmedgego_hostFuncInvoke(handle C.uintptr_t, frame *C.WasmEdge_CallingFrameContext,
+func wasmedgego_hostFuncInvoke(token unsafe.Pointer, frame *C.WasmEdge_CallingFrameContext,
 	params *C.WasmEdge_Value, paramLen C.uint32_t,
-	returns *C.WasmEdge_Value, returnLen C.uint32_t) C.WasmEdge_Result {
+	returns *C.WasmEdge_Value, returnLen C.uint32_t) (result C.WasmEdge_Result) {
+
+	// This recovery is deliberately the outermost operation in the exported
+	// callback. In particular it also covers toResult, whose errors.Is/As
+	// traversal can invoke user-defined methods that panic.
+	defer func() {
+		if r := recover(); r != nil {
+			result = hostPanicResult(r)
+		}
+	}()
 
 	err := func() (err error) {
 		// A Go panic must never unwind into C: convert it into a
 		// user-level failure and let WASM see a trap.
 		defer func() {
 			if r := recover(); r != nil {
-				err = fmt.Errorf("wasmedge: host function panicked: %v", r)
+				err = &HostPanicError{Value: r, Stack: debug.Stack()}
 			}
 		}()
 
-		entry, ok := cgo.Handle(handle).Value().(*hostFuncEntry)
+		entry, ok := hostFuncEntryForToken(token)
 		if !ok {
 			return fmt.Errorf("wasmedge: corrupt host function handle")
 		}
 
-		call := &CallContext{ptr: frame, valid: true}
-		defer func() { call.valid = false }()
+		call := newCallContext(frame, contextForCallFrame(frame))
+		defer call.expire()
 
-		in := unpackValues(unsafe.Slice(params, int(paramLen)))
+		in := unpackValuesOwned(unsafe.Slice(params, int(paramLen)), call)
 		out, ferr := entry.fn(call, in)
 		if ferr != nil {
 			return ferr
@@ -69,25 +79,40 @@ func wasmedgego_hostFuncInvoke(handle C.uintptr_t, frame *C.WasmEdge_CallingFram
 			return fmt.Errorf("wasmedge: host function returned %d values, type wants %d",
 				len(out), int(returnLen))
 		}
+		if err := entry.validateResults(out); err != nil {
+			return err
+		}
+		if err := entry.retainResults(call, out); err != nil {
+			return err
+		}
 		if returnLen > 0 {
 			dst := unsafe.Slice(returns, int(returnLen))
 			for i, v := range out {
+				v.assertOwnerAlive()
 				dst[i] = v.raw
 			}
 		}
+		runtime.KeepAlive(out)
 		return nil
 	}()
 	return toResult(err)
 }
 
-// wasmedgego_moduleDataFinalize releases the cgo.Handle pinning a module's
-// host data; the engine invokes it (via shims.c) when the module instance
-// is destroyed.
+func hostPanicResult(value any) C.WasmEdge_Result {
+	code := registerHostError(&HostPanicError{Value: value, Stack: debug.Stack()})
+	return C.WasmEdge_ResultGen(
+		C.WasmEdge_ErrCategory_UserLevelError,
+		C.uint32_t(code),
+	)
+}
+
+// wasmedgego_moduleDataFinalize resolves an opaque C token and releases the
+// registry entry's internal cgo.Handle; only the C token crosses the callback
+// boundary. The engine invokes it (via shims.c) when the module instance is
+// destroyed.
 //
 //export wasmedgego_moduleDataFinalize
-func wasmedgego_moduleDataFinalize(handle C.uintptr_t) {
+func wasmedgego_moduleDataFinalize(token unsafe.Pointer) {
 	defer func() { _ = recover() }()
-	if handle != 0 {
-		cgo.Handle(handle).Delete()
-	}
+	finalizeModuleData(token)
 }

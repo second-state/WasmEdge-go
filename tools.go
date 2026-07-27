@@ -11,7 +11,9 @@ import "unsafe"
 // Each takes the argv it would have received as a process (argv[0]
 // included) and returns the process exit code.
 
-func driverArgs(args []string) (**C.char, C.int, func()) {
+const driverInvalidArgumentExitCode = 2
+
+func driverArgs(args []string) (**C.char, func()) {
 	carr := make([]*C.char, len(args))
 	for i, a := range args {
 		carr[i] = C.CString(a)
@@ -22,41 +24,72 @@ func driverArgs(args []string) (**C.char, C.int, func()) {
 		}
 	}
 	if len(carr) == 0 {
-		return nil, 0, release
+		return nil, release
 	}
-	return &carr[0], C.int(len(carr)), release
+	return &carr[0], release
 }
 
-// DriverCompiler runs the `wasmedgec` AOT compiler CLI.
+// DriverCompiler runs the `wasmedgec` AOT compiler CLI. It returns exit code
+// 2 without entering the native driver if an argument contains an embedded
+// NUL byte.
 func DriverCompiler(args []string) int {
-	argv, argc, free := driverArgs(args)
+	if validateCStringSlice("driver argument", args) != nil {
+		return driverInvalidArgumentExitCode
+	}
+	argc, err := checkedCIntCount("driver argument", uint64(len(args)))
+	if err != nil {
+		return driverInvalidArgumentExitCode
+	}
+	prepareDriverConsole()
+	argv, free := driverArgs(args)
 	defer free()
-	return int(C.WasmEdge_Driver_Compiler(argc, argv))
+	return int(C.WasmEdge_Driver_Compiler(C.int(argc), argv))
 }
 
-// DriverTool runs the `wasmedge` runtime CLI.
+// DriverTool runs the `wasmedge` runtime CLI. It returns exit code 2 without
+// entering the native driver if an argument contains an embedded NUL byte.
 func DriverTool(args []string) int {
-	argv, argc, free := driverArgs(args)
+	if validateCStringSlice("driver argument", args) != nil {
+		return driverInvalidArgumentExitCode
+	}
+	argc, err := checkedCIntCount("driver argument", uint64(len(args)))
+	if err != nil {
+		return driverInvalidArgumentExitCode
+	}
+	prepareDriverConsole()
+	argv, free := driverArgs(args)
 	defer free()
-	return int(C.WasmEdge_Driver_Tool(argc, argv))
+	return int(C.WasmEdge_Driver_Tool(C.int(argc), argv))
 }
 
 // DriverUniTool runs the unified `wasmedge` CLI (runtime + compile
-// subcommands).
+// subcommands). It returns exit code 2 without entering the native driver if
+// an argument contains an embedded NUL byte.
 func DriverUniTool(args []string) int {
-	argv, argc, free := driverArgs(args)
+	if validateCStringSlice("driver argument", args) != nil {
+		return driverInvalidArgumentExitCode
+	}
+	argc, err := checkedCIntCount("driver argument", uint64(len(args)))
+	if err != nil {
+		return driverInvalidArgumentExitCode
+	}
+	prepareDriverConsole()
+	argv, free := driverArgs(args)
 	defer free()
-	return int(C.WasmEdge_Driver_UniTool(argc, argv))
+	return int(C.WasmEdge_Driver_UniTool(C.int(argc), argv))
 }
 
-// TODO(intern-medium): A12 — bind the remaining driver helpers:
+// TODO(platform): A12 — bind the remaining driver helpers when their build
+// environments can be verified:
 //
 //	DriverWasiNNRPCServer(args []string) int
-//	    -> WasmEdge_Driver_WasiNNRPCServer (pattern: DriverTool above)
-//	Windows console/argv helpers
-//	    -> WasmEdge_Driver_ArgvCreate/ArgvDelete/SetConsoleOutputCPtoUTF8,
-//	       behind //go:build windows; document that they convert wchar_t
-//	       argv from wmain into UTF-8 for the Driver* calls
+//	    -> WasmEdge_Driver_WasiNNRPCServer. The declaration is gated by
+//	       WASMEDGE_BUILD_WASI_NN_RPC and the official 0.17.1 SDK artifacts
+//	       do not export the symbol, so this needs an explicit build tag and
+//	       a matching custom-runtime CI lane.
+//	The Windows console helper is called automatically by Driver*. Go already
+//	converts the process command line to UTF-8, so the C-only wchar_t argv
+//	allocation helpers do not belong in the Go API.
 //
 // Verification is manual (drivers spawn full CLI runs): document the
 // commands you ran in the PR description, per PLAN.md A12.

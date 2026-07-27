@@ -11,6 +11,9 @@ func TestVersion(t *testing.T) {
 	if v == "" {
 		t.Fatal("empty version string")
 	}
+	if VersionMajor() != 0 || VersionMinor() != 17 || VersionPatch() < 1 {
+		t.Fatalf("unsupported runtime version %s; want >= 0.17.1 and < 0.18.0", v)
+	}
 	prefix := fmt.Sprintf("%d.%d.%d", VersionMajor(), VersionMinor(), VersionPatch())
 	if !strings.HasPrefix(v, prefix) {
 		t.Fatalf("version string %q does not start with %q", v, prefix)

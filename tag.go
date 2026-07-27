@@ -8,19 +8,23 @@ import "runtime"
 // Tag is an exception-handling tag instance (always borrowed; the C API
 // offers no way to create one).
 type Tag struct {
-	ptr   *C.WasmEdge_TagInstanceContext
-	owner any // pins the module the tag was found in
+	ptr  *C.WasmEdge_TagInstanceContext
+	life lifetime
 }
 
 func borrowedTag(ptr *C.WasmEdge_TagInstanceContext, owner any) *Tag {
 	if ptr == nil {
 		return nil
 	}
-	return &Tag{ptr: ptr, owner: owner}
+	return &Tag{ptr: ptr, life: borrowed(owner)}
 }
 
-// Type returns the tag's type (borrowed).
-func (t *Tag) Type() *TagType {
+func (t *Tag) assertAlive() { t.life.assertAlive("Tag") }
+
+// Type returns a copied descriptor of the tag's type.
+func (t *Tag) Type() TagType {
+	t.assertAlive()
 	defer runtime.KeepAlive(t)
-	return borrowedTagType(C.WasmEdge_TagInstanceGetTagType(t.ptr), t)
+	tt, _ := tagTypeFromC(C.WasmEdge_TagInstanceGetTagType(t.ptr))
+	return tt
 }

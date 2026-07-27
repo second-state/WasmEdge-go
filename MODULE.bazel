@@ -1,12 +1,23 @@
-# TODO(intern-medium): Regenerate Bazel support for the v2 root-package layout.
-# The v1 Bazel files (WORKSPACE, BUILD.bazel, wasmedge/BUILD.bazel) targeted the
-# old `wasmedge/` sub-package and were removed in the v2 redesign (see PLAN.md
-# Phase 9). Steps: bump rules_go/gazelle, point go_deps at the new go.mod, run
-# `gazelle` to emit BUILD files for the root package, bump the wasmedge_c
-# http_archive to a 0.17.x release, and restore the cgo copts/linkopts for
-# libwasmedge (see the v1 files in git history for reference:
-# `git show e5e7653 -- BUILD.bazel wasmedge/BUILD.bazel MODULE.bazel`).
 module(
     name = "wasmedge_go",
-    version = "2.0.0",
 )
+
+bazel_dep(name = "rules_go", version = "0.62.0")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+
+# Bazel is reproducible on the current Go toolchain. The go.mod directive
+# remains the module's minimum supported language version, and CI is configured
+# for the full supported Go matrix.
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.26.5")
+
+wasmedge_sdk_repository = use_repo_rule(
+    "//:wasmedge_sdk.bzl",
+    "wasmedge_sdk_repository",
+)
+
+# The binding intentionally does not choose or download a native runtime.
+# Point this repository at a WasmEdge 0.17.1 SDK with:
+#
+#   bazel test --repo_env=WASMEDGE_SDK=/absolute/sdk/prefix //...
+wasmedge_sdk_repository(name = "wasmedge_sdk")

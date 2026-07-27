@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "wasmedge",
+    srcs = glob(
+        [
+            "*.c",
+            "*.go",
+            "*.h",
+        ],
+        exclude = [
+            "*_test.go",
+            # Normal `go build` needs this platform linker directive. Bazel
+            # links the Windows import library through cc_import instead.
+            "cgo_windows.go",
+        ],
+    ),
+    cdeps = ["@wasmedge_sdk//:wasmedge"],
+    cgo = True,
+    importpath = "github.com/second-state/WasmEdge-go/v2",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "wasmedge_test",
+    srcs = glob(["*_test.go"]),
+    embed = [":wasmedge"],
+    deps = ["//internal/testwasm"],
+    timeout = "long",
+)

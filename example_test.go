@@ -123,3 +123,65 @@ func ExampleExecutor_Invoke() {
 	fmt.Println(out[0].I32())
 	// Output: 42
 }
+
+// WASI is opt-in. Empty Preopens means the guest receives no filesystem
+// preopens; arguments, environment, and standard streams are explicit.
+func ExampleVM_WASIModule() {
+	vm, err := wasmedge.NewVM(&wasmedge.Config{WASI: true})
+	if err != nil {
+		panic(err)
+	}
+	defer vm.Close()
+
+	wasi, ok := vm.WASIModule()
+	if !ok {
+		panic("WASI module is unavailable")
+	}
+	if err := wasi.InitWASI(wasmedge.WASIConfig{
+		Args:  []string{"guest"},
+		Envs:  []string{"MODE=example"},
+		Stdio: wasmedge.DiscardWASIStdio(),
+		// No Preopens: the guest receives no preopened directories.
+		// Discard stdio grants no ambient process streams.
+	}); err != nil {
+		panic(err)
+	}
+
+	if _, err := vm.RunBytes(testwasm.ProcExitModule(), "_start"); err != nil {
+		panic(err)
+	}
+	code, err := wasi.WASIExitCode()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(code)
+	// Output: 7
+}
+
+// UnsafeSlice aliases engine-owned memory. It is useful only when avoiding a
+// copy matters, and must be discarded before memory growth or owner teardown.
+func ExampleMemory_UnsafeSlice() {
+	memory, err := wasmedge.NewMemory(wasmedge.MemoryType{
+		Limits: wasmedge.Limits{Min: 1},
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer memory.Close()
+
+	if err := memory.Write(0, []byte("cat")); err != nil {
+		panic(err)
+	}
+	view, err := memory.UnsafeSlice(0, 3)
+	if err != nil {
+		panic(err)
+	}
+	view[0] = 'b'
+
+	copied, err := memory.Read(0, 3)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(copied))
+	// Output: bat
+}

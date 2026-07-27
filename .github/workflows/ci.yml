@@ -4,63 +4,217 @@ on:
   push:
     branches: [master]
   pull_request:
+  schedule:
+    - cron: "23 4 * * *"
 
-env:
-  WASMEDGE_VERSION: "0.17.0"
+permissions:
+  contents: read
 
 jobs:
   test:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14]
-        go: ["1.24", "stable"]
-    runs-on: ${{ matrix.os }}
+        go: ["1.25.x", "1.26.x"]
+        target:
+          - os: ubuntu-24.04
+            artifact: WasmEdge-0.17.1-ubuntu20.04_x86_64.tar.gz
+            sha256: 6d307584d5224b00e6f1f42e6c29931b81fa95992e9ea6189d7292ac04cf4dc3
+          - os: macos-15
+            artifact: WasmEdge-0.17.1-darwin_arm64.tar.gz
+            sha256: 7f6810f0676f8405586a3edb350ce9a6eb256ef7118f2e327f131b7833d0033e
+    runs-on: ${{ matrix.target.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Install WasmEdge
+      - name: Install verified WasmEdge 0.17.1 SDK
+        env:
+          ARTIFACT: ${{ matrix.target.artifact }}
+          SHA256: ${{ matrix.target.sha256 }}
         run: |
-          curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh \
-            | bash -s -- -v ${WASMEDGE_VERSION}
+          archive="$RUNNER_TEMP/$ARTIFACT"
+          install_dir="$RUNNER_TEMP/wasmedge"
+          curl --fail --location --retry 3 \
+            "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/$ARTIFACT" \
+            --output "$archive"
+          echo "$SHA256  $archive" | shasum -a 256 --check -
+          mkdir -p "$install_dir"
+          tar -xzf "$archive" -C "$install_dir"
+          {
+            echo "WASMEDGE_SDK=$install_dir"
+            echo "CGO_CFLAGS=-I$install_dir/include"
+            echo "CGO_LDFLAGS=-L$install_dir/lib -Wl,-rpath,$install_dir/lib"
+            echo "LD_LIBRARY_PATH=$install_dir/lib"
+            echo "DYLD_LIBRARY_PATH=$install_dir/lib"
+          } >> "$GITHUB_ENV"
 
       - name: Build
-        run: |
-          source $HOME/.wasmedge/env
-          go build ./...
+        run: go build ./...
 
       - name: Vet
-        run: |
-          source $HOME/.wasmedge/env
-          go vet ./...
+        run: go vet ./...
+
+      - name: Verify WasmEdge 0.17.1 C API coverage
+        if: runner.os == 'Linux' && matrix.go == '1.26.x'
+        run: go run ./internal/apicoverage -sdk "$WASMEDGE_SDK"
 
       - name: Test (race)
-        run: |
-          source $HOME/.wasmedge/env
-          go test -race ./...
+        run: go test -race ./...
+
+      - name: Test (strict cgo pointer checks)
+        env:
+          GOEXPERIMENT: cgocheck2
+        run: go test ./...
 
       - name: Test (leak diagnostics)
+        run: go test -tags wasmedge_debug ./...
+
+      - name: Test vendored external consumer
+        working-directory: testdata/consumer
         run: |
-          source $HOME/.wasmedge/env
-          go test -tags wasmedge_debug ./...
+          go mod vendor
+          go build -mod=vendor .
+
+      - name: Set up Bazelisk
+        if: matrix.go == '1.26.x'
+        uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2 # v3.0.0
+        with:
+          bazelisk-version: 1.29.0
+
+      - name: Test Bazel system-SDK build
+        if: matrix.go == '1.26.x'
+        run: bazel test --repo_env=WASMEDGE_SDK="$WASMEDGE_SDK" //...
+
+      - name: Verify WasmEdge 0.17 ELF ABI binding
+        if: runner.os == 'Linux'
+        run: |
+          go test -c -o /tmp/wasmedge-go.test .
+          for symbol in \
+            WasmEdge_LimitIsEqual \
+            WasmEdge_MemoryTypeCreate \
+            WasmEdge_MemoryTypeGetLimit \
+            WasmEdge_TableTypeCreate \
+            WasmEdge_TableTypeGetLimit
+          do
+            readelf --wide --dyn-syms /tmp/wasmedge-go.test \
+              | grep -F "${symbol}@WASMEDGE_0.17"
+          done
 
   lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: stable
-      - name: Install WasmEdge
+          go-version: "1.26.x"
+      - name: Install verified WasmEdge 0.17.1 SDK
         run: |
-          curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh \
-            | bash -s -- -v ${WASMEDGE_VERSION}
+          artifact="WasmEdge-0.17.1-ubuntu20.04_x86_64.tar.gz"
+          archive="$RUNNER_TEMP/$artifact"
+          install_dir="$RUNNER_TEMP/wasmedge"
+          curl --fail --location --retry 3 \
+            "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/$artifact" \
+            --output "$archive"
+          echo "6d307584d5224b00e6f1f42e6c29931b81fa95992e9ea6189d7292ac04cf4dc3  $archive" \
+            | shasum -a 256 --check -
+          mkdir -p "$install_dir"
+          tar -xzf "$archive" -C "$install_dir"
+          {
+            echo "CGO_CFLAGS=-I$install_dir/include"
+            echo "CGO_LDFLAGS=-L$install_dir/lib -Wl,-rpath,$install_dir/lib"
+            echo "LD_LIBRARY_PATH=$install_dir/lib"
+          } >> "$GITHUB_ENV"
       - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.25.x", "1.26.x"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Install verified WasmEdge 0.17.1 SDK
+        shell: pwsh
+        env:
+          SHA256: 299a73d8b8a4de90ed6f9ace6832bb06eb8d852e02db2b34360a4199905e895f
         run: |
-          source $HOME/.wasmedge/env
-          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-          golangci-lint run
+          $artifact = "WasmEdge-0.17.1-windows.zip"
+          $archive = Join-Path $env:RUNNER_TEMP $artifact
+          $installDir = Join-Path $env:RUNNER_TEMP "wasmedge"
+          Invoke-WebRequest `
+            "https://github.com/WasmEdge/WasmEdge/releases/download/0.17.1/$artifact" `
+            -OutFile $archive
+          $actual = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          if ($actual -ne $env:SHA256) {
+            throw "WasmEdge checksum mismatch: expected $env:SHA256, got $actual"
+          }
+          Expand-Archive -Path $archive -DestinationPath $installDir
+
+          # The non-MSVC archive contains a GNU-compatible import library,
+          # but uses the .lib spelling. Give cgo's -lwasmedge lookup the
+          # conventional MinGW filename as well.
+          Copy-Item `
+            (Join-Path $installDir "lib/wasmedge.lib") `
+            (Join-Path $installDir "lib/libwasmedge.a")
+
+          $unixInstallDir = $installDir.Replace('\', '/')
+          "WASMEDGE_SDK=$unixInstallDir" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CGO_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CC=gcc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CGO_CFLAGS=-I$unixInstallDir/include" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CGO_LDFLAGS=-L$unixInstallDir/lib" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          (Join-Path $installDir "bin") |
+            Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\msys64\mingw64\bin" |
+            Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test (race)
+        run: go test -race ./...
+
+      - name: Test (strict cgo pointer checks)
+        env:
+          GOEXPERIMENT: cgocheck2
+        run: go test ./...
+
+      - name: Test (leak diagnostics)
+        run: go test -tags wasmedge_debug ./...
+
+      - name: Test external consumer
+        working-directory: testdata/consumer
+        run: go build .
+
+      - name: Set up Bazelisk
+        if: matrix.go == '1.26.x'
+        uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2 # v3.0.0
+        with:
+          bazelisk-version: 1.29.0
+
+      - name: Test Bazel system-SDK build
+        if: matrix.go == '1.26.x'
+        shell: bash
+        run: bazel test "--repo_env=WASMEDGE_SDK=$WASMEDGE_SDK" ...

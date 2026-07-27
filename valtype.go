@@ -70,6 +70,7 @@ func (t ValType) IsRefNull() bool { return bool(C.WasmEdge_ValTypeIsRefNull(t.ra
 // kinds report ValKindRef.
 type ValKind uint8
 
+// ValKind values classify the payload carried by a Value.
 const (
 	ValKindUnknown ValKind = iota
 	ValKindI32

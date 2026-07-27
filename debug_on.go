@@ -8,8 +8,9 @@ import (
 )
 
 // reportLeak logs an owned wrapper that reached the garbage collector
-// without an explicit Close. The C object is still freed by the cleanup;
-// this exists to make the leak visible during development.
+// without an explicit Close. Native teardown is intentionally explicit-only:
+// Go does not order cleanups across dependent C objects, so freeing here could
+// turn an application leak into a process-level use-after-free.
 func reportLeak(kind string) {
 	fmt.Fprintf(os.Stderr, "wasmedge: leak: %s garbage-collected without Close\n", kind)
 }

@@ -1,24 +1,30 @@
 # WasmEdge-go v2 Refactoring Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement remaining phases task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-> **For interns:** read SPEC.md first, then Appendix A. Every `TODO(intern-*)` in the tree is a self-contained task with an acceptance test.
+> This is the historical execution plan for the v2 rewrite. Read SPEC.md and
+> docs/DESIGN.md for the current API contract; Appendix A records completed
+> work and the remaining platform-gated item.
 
-**Goal:** Replace the legacy WasmEdge-go binding with an idiomatic Go v2 module covering the stable WasmEdge 0.17 C API.
+**Goal:** Replace the legacy WasmEdge-go binding with an idiomatic Go v2
+module covering the stable WasmEdge 0.17 C API. The final declaration
+accounting is in `docs/API_COVERAGE.md`.
 
-**Architecture:** Single root cgo package `wasmedge` (cgo types cannot cross packages), file-per-concept mirroring the upstream header split; two API layers (high-level `VM`, explicit `Loader/Validator/Executor/Store`); ownership-tracked `Close()` resources; one cgo trampoline per callback kind with `cgo.Handle` payloads.
+**Architecture:** Single root cgo package `wasmedge` (cgo types cannot cross packages), file-per-concept mirroring the upstream header split; two API layers (high-level `VM`, explicit `Loader/Validator/Executor/Store`); plain-Go type descriptors plus ownership-tracked native wrappers; explicit-only `Close()` teardown; one cgo trampoline per callback kind.
 
-**Tech Stack:** Go ≥ 1.24 (needs `runtime.AddCleanup`, `unsafe.Slice`, `runtime/cgo.Handle`), cgo against `libwasmedge` ≥ 0.17.0, GitHub Actions, golangci-lint.
+**Tech Stack:** Active supported Go releases (currently 1.25 and 1.26; needs `runtime.AddCleanup`, `unsafe.Slice`, `runtime/cgo.Handle`), cgo against `libwasmedge` ≥ 0.17.1 and < 0.18.0, GitHub Actions, golangci-lint.
 
 ## Global Constraints
 
 - Module path is exactly `github.com/second-state/WasmEdge-go/v2`; root package name `wasmedge`.
-- Minimum Go version: `go 1.24` in go.mod. No third-party runtime dependencies (test-only deps allowed but avoid; std lib preferred).
+- Supported Go versions follow the active release lines: `go 1.25` in go.mod,
+  with CI on Go 1.25 and 1.26. No third-party runtime dependencies (test-only
+  deps allowed but avoid; std lib preferred).
 - Bind only stable headers; never call anything in `wasmedge_deprecated.h`. `wasmedge_experimental.h` is out of scope.
 - Every public symbol has a doc comment; no `Get` prefixes; no `self` receivers; errors are `error`, never a custom result struct.
 - Panics must never cross a cgo callback boundary (`recover()` in every trampoline).
 - No `reflect.SliceHeader`; use `unsafe.Slice`/`unsafe.String`.
 - All C-string/bytes helpers free in the same function via `defer` unless ownership is documented.
-- Intern TODO tags: `TODO(intern-easy)`, `TODO(intern-medium)`, `TODO(intern-hard)` — each must state the C function(s) to bind, the pattern file to copy, and the test to extend.
+- Remaining TODOs must state their upstream/build constraint and required
+  verification environment.
 - Local dev/test env (documented in CONTRIBUTING.md):
   `export WASMEDGE_DIR=$HOME/workspace/WasmEdge` (headers at `$WASMEDGE_DIR/include/api` + `$WASMEDGE_DIR/build/include/api`, lib at `$WASMEDGE_DIR/build/lib/api`).
 - Commit style: conventional commits + `Signed-off-by: hydai <z54981220@gmail.com>`; run `lineguard` on touched files before each commit; run `go build ./... && go vet ./... && go test ./...` before each commit.
@@ -34,10 +40,10 @@
 
 **Steps:**
 - [x] Write SPEC.md + PLAN.md, commit as `docs: add v2 redesign spec and refactoring plan`
-- [ ] `git rm -r wasmedge main.go BUILD.bazel WORKSPACE` (keep MODULE.bazel stub)
-- [ ] `go.mod`: `module github.com/second-state/WasmEdge-go/v2`, `go 1.24`
-- [ ] `doc.go`: package doc with a 20-line usage example
-- [ ] Verify: `go build ./...` (compiles empty package), commit `feat!: start v2 module, remove legacy binding`
+- [x] `git rm -r wasmedge main.go BUILD.bazel WORKSPACE` (keep MODULE.bazel stub)
+- [x] `go.mod`: `module github.com/second-state/WasmEdge-go/v2`, `go 1.25`
+- [x] `doc.go`: package doc with a usage example
+- [x] Verify the root-package v2 module builds after removing the legacy tree
 
 ### Phase 1: cgo bridge + primitives
 
@@ -63,13 +69,17 @@
 **Files:**
 - Create: `valtype.go` (`ValType`, `ValKind`, constructors/predicates), `value.go` (`Value`, constructors `I32/I64/F32/F64/V128/FuncRefValue/ExternRefValue/NullRef`, accessors, `packValues/unpackValues` helpers), `externref.go` (cgo.Handle pinning)
 - Create: `limits.go` (plain struct → C LimitContext materializer), `types.go` (`FunctionType`, `TableType`, `MemoryType`, `GlobalType`, `TagType`, `ImportType`, `ExportType`)
-- Create: `resource.go` — ownership helper (owned/borrowed/transferred + AddCleanup arm/disarm)
+- Create: `resource.go` — ownership helper (owned/borrowed/transferred,
+  dependency leases, VM generations, and leak-only AddCleanup diagnostics)
 - Test: `value_test.go`, `types_test.go`
 
-**Interfaces:**
-- `func packValues([]Value) (*C.WasmEdge_Value, C.uint32_t, func())`, `func unpackValues(ptr *C.WasmEdge_Value, n C.uint32_t) []Value`
-- `resource.close(func())`, `resource.markTransferred()`, `newOwned/newBorrowed`
-- `NewFunctionType(params, results []ValType) *FunctionType`
+**Public interfaces (final shape):**
+- Plain values: `FunctionType{Params, Results}`, `TableType{Element, Limits}`,
+  `MemoryType{Limits}`, `GlobalType{Value, Mutability}`, and
+  `TagType{Signature}`. There are no `New*Type` constructors or type `Close`
+  methods.
+- Native wrappers use owned/borrowed/transferred lifetime state. GC cleanup
+  never invokes C; `-tags wasmedge_debug` reports an omitted explicit Close.
 
 **Steps:** tests (value round-trip per kind incl. V128 lanes, externref pin/unpin, double-Close idempotency, limits equality) → implement → PASS → commit `feat: add typed values, value types, ownership tracking`
 
@@ -81,9 +91,9 @@
 
 **Interfaces:**
 - `NewLoader(*Config) (*Loader, error)`, `(*Loader).LoadBytes([]byte) (*ASTModule, error)`, `LoadFile`, `Serialize(*ASTModule) ([]byte, error)`
-- `NewValidator(*Config)`, `(*Validator).Validate(*ASTModule) error`
+- `NewValidator(*Config) (*Validator, error)`, `(*Validator).Validate(*ASTModule) error`
 - `NewExecutor(*Config, ...ExecutorOption) (*Executor, error)` with `WithStats(*Statistics)`
-- `(*Executor).Instantiate(*Store, *ASTModule) (*Module, error)`, `Register`, `RegisterImport`, `RegisterImportWithAlias`, `Invoke(*Function, ...Value) ([]Value, error)`, `InvokeContext`
+- `(*Executor).Instantiate(*Store, *ASTModule) (*Module, error)`, `Register`, `RegisterImport`, `RegisterImportWithAlias`, `Invoke(*Function, ...Value) ([]Value, error)`, `InvokeAsync`, `InvokeContext`
 - `NewStore() *Store`, `(*Store).Module(name) (*Module /*borrowed*/, bool)`, `ModuleNames() []string`
 
 **Steps:** fixture-driven TDD as above → commit `feat: add config and loader/validator/executor/store pipeline`
@@ -97,6 +107,11 @@
 
 **Steps:** TDD as above → commit `feat: add module/memory/table/global instances and host functions`
 
+**Final constructor shape:** `NewFunction`, `NewTable`,
+`NewTableWithInit`, `NewMemory`, and `NewGlobal` consume plain descriptors
+and return `(*T, error)`. Allocation-only `NewModule` is semantically
+infallible and panics only on impossible native allocation failure.
+
 ### Phase 5: VM + async
 
 **Files:**
@@ -105,6 +120,13 @@
 
 **Steps:** TDD → commit `feat: add VM and context-aware async execution`
 
+**Final lifetime shape:** one active execution per VM/Executor; exactly one
+terminal `Execution.Wait` or `Execution.Close`; observational `WaitFor`;
+request-only `Cancel`; explicit `ErrCancellationRace`/`ErrUnusable` handling
+for WasmEdge 0.17.1's shared stop token. Active and registered module views
+carry generation guards, and `VM.Reset() error` refuses leased/in-flight
+state before invalidating both generations.
+
 ### Phase 6: WASI + plugins
 
 **Files:**
@@ -112,6 +134,20 @@
 - Test: `wasi_test.go` (exit code via proc_exit fixture — fixture added here)
 
 **Steps:** TDD → commit `feat: add WASI module and plugin loading`
+
+`NewWASIModule(WASIConfig) (*Module, error)` requires an explicit
+`WASIStdio` policy. VM registration alone leaves the fd table empty;
+`DiscardWASIStdio` supplies binding-owned null streams,
+`InheritWASIStdio` grants process streams, and `RedirectWASIStdio` grants a
+complete set of three caller-owned files. Unix descriptors must fit `int32`;
+redirection on Windows is rejected because `os.File.Fd` is a HANDLE, not
+WasmEdge's expected CRT descriptor. The module retains caller-owned stdio
+wrappers and binding-owned discard descriptors while they remain native
+dependencies, and WASI-specific calls require private constructor/accessor
+provenance rather than matching a module name.
+Because WasmEdge 0.17.1 cannot replace initialized fd-table entries, re-init
+accepts args/env changes only when preopens, policy, and files are identical;
+mapping changes return `ErrWASIResourceMappingImmutable`.
 
 ### Phase 7: compiler + tools
 
@@ -125,51 +161,66 @@
 
 **Files:**
 - Create: `example_test.go` (pkg.go.dev runnable examples), `CONTRIBUTING.md` (build env, intern guide), rewrite `README.md`, `docs/MIGRATION.md`
-- Create: `.golangci.yml`, rewrite `.github/workflows/ci.yml` (matrix ubuntu-24.04/macos-14, install WasmEdge 0.17.0, vet+lint+test -race), drop stale workflows
+- Create: `.golangci.yml`, rewrite `.github/workflows/ci.yml` (matrix ubuntu-24.04/macos-15 plus Windows 2025, install WasmEdge 0.17.1, vet+lint+test -race), drop stale workflows
 - Steps: `go vet ./... && go test -race ./...` PASS → commit `docs+ci: v2 documentation, examples, lint, CI matrix`
 
-### Phase 9: deferred follow-ups (tracked, not in this branch)
+### Phase 9: follow-ups and platform constraints
 
-- [ ] File upstream WasmEdge bug: `WasmEdge_LoaderSerializeASTModule` aborts
-  with `std::system_error: mutex lock failed` on 0.17.0-168-gad9d34498
-  (pure-C reproducer confirmed; see the comment on TestSerializeRoundTrip in
-  pipeline_test.go). Re-enable that test via `WASMEDGE_TEST_SERIALIZE=1`
-  after the fix.
-- [ ] Regenerate Bazel BUILD files for root-package layout (gazelle) — restores #58
+- [x] Guard the upstream `WasmEdge_LoaderSerializeASTModule` process abort on
+  the official 0.17.1 `darwin/arm64` artifact. `Loader.Serialize` returns
+  `ErrSerializeUnsupported` before native entry on that platform; Linux,
+  Windows, and other architectures continue to run the native round-trip
+  test. Remove the targeted guard after an upstream fix. Filing an upstream
+  issue remains an external follow-up.
+- [x] Restore Bazel 9.2.0/rules_go 0.62.0 BUILD files for the root-package
+  layout using a caller-provided `WASMEDGE_SDK` prefix.
 - [ ] When bumping to the next C API line: `WasmEdge_ModuleInstanceAdd*`
-  return `WasmEdge_Result` at upstream HEAD (void in released 0.17.0) —
+  return `WasmEdge_Result` at upstream HEAD (void in released 0.17.x) —
   switch module.go's Add* bodies to `newResult(...)`; the Go signatures
   already return error so this is non-breaking. Upstream HEAD also removed
   the post-0.17 MaxGC configure knobs; do not bind them.
-- [ ] Windows CI lane (cgo flags exist; needs runner validation)
+- [x] Configure checksum-pinned Ubuntu 24.04, macOS 15, and Windows 2025 CI
+  lanes for Go 1.25 and 1.26, including a Bazel system-SDK test on each Go
+  1.26 host lane. The refreshed matrix still needs an exact-commit hosted run
+  before a stable tag.
+- [x] Make WASI stdio a required explicit capability policy. VM registration
+  starts with an empty fd table; discard, inherit, and redirect are explicit
+  initialization paths, and the zero value is rejected before native entry.
+- [x] Make the 0.17.1 C API audit reproducible with a per-symbol manifest and
+  a verifier that reparses the official SDK headers and checks all direct
+  production references in CI.
 - [ ] `wasmedge_experimental.h` behind `//go:build wasmedge_experimental`
 - [ ] Typed plugin sub-packages (wasi_nn) if demand appears
-- [ ] Burn down Appendix A intern tasks; tag `v2.0.0-alpha.1`
+- [x] Explicitly defer Appendix A's platform-gated A12: the official 0.17.1
+  SDKs do not export it, so enabling it requires a feature-matched custom SDK
+  and dedicated build tag/CI lane. Tagging `v2.0.0-alpha.1` remains a
+  separate release action after the exact-commit hosted matrix passes.
 
 ---
 
-## Appendix A: Intern Handoff Tasks
+## Appendix A: Remaining Handoff Tasks
 
-Ground rules: one task = one PR; copy the referenced pattern file; extend the
-referenced test; run `go vet ./... && go test ./...`; conventional commit +
-sign-off. Difficulty: easy ≈ half a day, medium ≈ 1–2 days.
+Completed entries remain in this table so the implementation history is
+visible. Ground rules for open work: one task = one PR; extend the referenced
+test; run `go vet ./... && go test ./...`; use a Conventional Commit subject.
 
-| # | Tag in tree | File | Task | Pattern to copy | Test to extend |
-|---|---|---|---|---|---|
-| A1 | `TODO(intern-easy)` | `errors.go` | Complete `ErrCode` constants + `String()` from `enum.inc` `UseErrCode` table | seeded constants above the TODO | `errors_test.go` |
-| A2 | `TODO(intern-easy)` | `statistics.go` | Bind `SetCostTable`, `SetCostLimit`, `Clear` | `InstrCount` in same file | `pipeline_test.go/TestStatistics` |
-| A3 | `TODO(intern-easy)` | `types.go` | `ImportType/ExportType` accessors for Table/Memory/Tag/Global | the Function accessors in same file | `types_test.go` |
-| A4 | `TODO(intern-easy)` | `vm.go` | `RunFile`, `ExecuteRegistered`, `RegisterModuleFromFile/FromImportWithAlias` | `RunBytes`/`RegisterModule` in same file | `vm_test.go` |
-| A5 | `TODO(intern-easy)` | `plugin.go` | `(*Plugin).ModuleNames`, `InitWASINN` | `PluginNames` in same file | `plugin_test.go` (new) |
-| A6 | `TODO(intern-easy)` | `table.go` | `Grow`, `Size`, `TableType` accessor | `memory.go` Grow/PageCount | `module_test.go/TestTable` |
-| A7 | `TODO(intern-medium)` | `global.go`, `tag.go` | Global set/get incl. v128 + Tag type accessors | `table.go` Get/Set | `module_test.go/TestGlobal` |
-| A8 | `TODO(intern-medium)` | `function.go` | Extend `WrapFunc` kinds: `[16]byte` (v128), `*ExternRef`, `*Function` params/results | existing i32/i64/f32/f64 switch arms | `hostfunc_test.go/TestWrapFuncKinds` |
-| A9 | `TODO(intern-medium)` | `wasi.go` | `NativeHandler`, `InitWASI` re-init on borrowed VM module | `ExitCode` in same file | `wasi_test.go` |
-| A10 | `TODO(intern-medium)` | `async.go` | `WaitFor(d time.Duration) bool` + `Execution` introspection | `Wait` in same file | `vm_test.go/TestExecuteAsync` |
-| A11 | `TODO(intern-medium)` | `log.go` | Map engine log levels→slog levels incl. Trace/Critical edge cases; attach LoggerName/ThreadId attrs | callback trampoline above the TODO | `log_test.go` (new) |
-| A12 | `TODO(intern-medium)` | `tools.go` | `DriverWasiNNRPCServer` + argv UTF-8 helpers on Windows | `DriverTool` in same file | manual (documented in file) |
-| A13 | `TODO(intern-easy)` | `config_string.go` | `String()` for `Proposal`, `Standard`, `RunMode`, `HostRegistration` | `ValKind.String()` in `valtype.go` | `config_test.go` |
-| A14 | `TODO(intern-hard)` | `memory.go` | Shared-memory (Threads) doc pass + aliasing tests; decide `UnsafeSlice` policy under growth | doc block on `UnsafeSlice` | `memory_test.go/TestSharedMemory` |
+| # | Status | File | Task | Test |
+|---|---|---|---|---|
+| A1 | done | `errors.go` | Complete all 160 WasmEdge 0.17.1 `ErrCode` constants and `String()` values | `errors_test.go` |
+| A2 | done | `statistics.go` | Bind cost table, cost limit, and clear; preserve policy across Executor creation | `pipeline_test.go/TestStatistics` |
+| A3 | done | `astmodule.go` | Typed import/export accessors for Table, Memory, Tag, and Global | `types_test.go` |
+| A4 | done | `vm.go` | File registration/run, alias imports, registered sync/async/context execution | `vm_test.go` |
+| A5 | done | `plugin.go` | `(*Plugin).ModuleNames`, `InitWASINN` | `plugin_test.go` |
+| A6 | done | `table.go` | `Grow`, `Size`, `Type`, and reference lifetime checks | `table_test.go` |
+| A7 | done | `global.go`, `tag.go` | Global get/set including v128; Tag type accessors | `global_test.go` |
+| A8 | done | `function.go` | `WrapFunc` support for v128, externref, and funcref; canonical result-root cycle rejection | `hostfunc_test.go`, `reference_cycle_test.go` |
+| A9 | done | `wasi.go` | Provenance-checked exit/native-handler APIs; args/env re-init with immutable 0.17.1 stdio/preopen mappings; stdio rooting on standalone/borrowed VM modules | `wasi_test.go`, platform-specific stdio tests |
+| A10 | done | `async.go`, `vm.go`, `resource.go` | Terminal async ownership, cancellation-race poisoning, transactional invocation roots, and generation-safe result/view lifetimes | `vm_test.go`, `invocation_test.go` |
+| A11 | done | `log.go` | Complete Trace/Critical slog mapping and structured attributes | `log_test.go` |
+| A12 | explicitly deferred | `tools.go` | WASI-NN RPC driver is absent from official 0.17.1 SDK builds; future support requires a build tag, feature-matched runtime, and CI | platform/manual |
+| A13 | done | `config_string.go` | `String()` for configuration enums | `config_test.go` |
+| A14 | done | `memory.go` | Reject shared-memory Go slices; document aliasing contract | `memory_test.go` |
+| A15 | done, hosted validation pending | `tools_console_windows.go`, `.github/workflows/ci.yml` | Configure Windows console output as UTF-8, split platform-specific WASI stdio tests, and add Go 1.25/1.26 Windows CI lanes | exact-commit hosted matrix |
 
 ## Appendix B: Verification Matrix
 
@@ -178,6 +229,9 @@ sign-off. Difficulty: easy ≈ half a day, medium ≈ 1–2 days.
 | Build | `go build ./...` | every commit |
 | Vet | `go vet ./...` | every commit |
 | Unit + race | `go test -race ./...` | every commit |
+| Strict cgo pointers | `GOEXPERIMENT=cgocheck2 go test ./...` | CI |
 | Lint | `golangci-lint run` | CI |
 | Leak debug | `go test -tags wasmedge_debug ./...` | CI (informational) |
-| Version gate | `go test -run TestVersion ./...` against 0.17.x lib | CI |
+| Version gate | `go test -run TestVersion ./...` against a >= 0.17.1, < 0.18 lib | CI |
+| Bazel | `bazel test --repo_env=WASMEDGE_SDK=/absolute/sdk/prefix //...` | release candidate |
+| Windows | checksum-pinned `windows-2025`, Go 1.25 and 1.26 | required before stable |

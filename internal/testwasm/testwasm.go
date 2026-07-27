@@ -9,8 +9,9 @@ package testwasm
 
 // Value type codes.
 const (
-	tI32 = 0x7F
-	tI64 = 0x7E
+	tI32     = 0x7F
+	tI64     = 0x7E
+	tFuncRef = 0x70
 )
 
 // Section ids.
@@ -158,6 +159,23 @@ func HostCallModule() []byte {
 	)
 }
 
+// FuncRefAliasModule imports `env.p: () -> funcref` and exports
+// `get_p: () -> funcref`, which returns a native funcref to that imported
+// function. It exercises reference identity whose Go provenance owner is the
+// guest function rather than the referenced host function.
+func FuncRefAliasModule() []byte {
+	return cat(
+		header(),
+		section(secType, vec(funcType(nil, []byte{tFuncRef}))),
+		section(secImport, vec(importFunc("env", "p", 0))),
+		section(secFunc, vec(uleb(0))),
+		section(secExport, vec(export("get_p", kindFunc, 1))),
+		section(secCode, vec(body([]byte{
+			0xD2, 0x00, // ref.func 0 (the imported env.p)
+		}))),
+	)
+}
+
 // MemoryModule exports a 1-page memory as "mem" (with "hello" written at
 // offset 0) and `load8: (i32) -> i32` returning the byte at the given
 // address.
@@ -214,6 +232,31 @@ func ProcExitModule() []byte {
 		section(secCode, vec(body([]byte{
 			0x41, 0x07, // i32.const 7
 			0x10, 0x00, // call 0 (proc_exit)
+		}))),
+	)
+}
+
+// WASICloseStdinModule imports
+// `wasi_snapshot_preview1.fd_close: (i32) -> i32` and exports `_start`,
+// which closes stdin and discards the returned WASI errno.
+func WASICloseStdinModule() []byte {
+	return cat(
+		header(),
+		section(secType, vec(
+			funcType([]byte{tI32}, []byte{tI32}), // type 0: fd_close
+			funcType(nil, nil),                   // type 1: _start
+		)),
+		section(secImport, vec(importFunc(
+			"wasi_snapshot_preview1",
+			"fd_close",
+			0,
+		))),
+		section(secFunc, vec(uleb(1))),
+		section(secExport, vec(export("_start", kindFunc, 1))),
+		section(secCode, vec(body([]byte{
+			0x41, 0x00, // i32.const 0 (stdin)
+			0x10, 0x00, // call 0 (fd_close)
+			0x1A, // drop errno
 		}))),
 	)
 }

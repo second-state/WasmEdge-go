@@ -1,0 +1,8 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testwasm",
+    srcs = ["testwasm.go"],
+    importpath = "github.com/second-state/WasmEdge-go/v2/internal/testwasm",
+    visibility = ["//:__pkg__"],
+)

@@ -3,6 +3,8 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 
+import "fmt"
+
 // Config declares engine settings for VM, Loader, Validator, Executor and
 // Compiler constructors. It is plain data with no C lifetime: constructors
 // materialize a WasmEdge_ConfigureContext from it, hand it to the engine
@@ -12,7 +14,7 @@ import "C"
 // Zero values mean "engine default" throughout, so a partially filled
 // literal composes naturally:
 //
-//	wasmedge.NewVM(&wasmedge.Config{WASI: true, RunMode: wasmedge.RunModeJIT})
+//	wasmedge.NewVM(&wasmedge.Config{RunMode: wasmedge.RunModeJIT})
 type Config struct {
 	// Standard selects a WASM standard version, overriding the default
 	// proposal set. StandardUnset keeps the engine default.
@@ -23,7 +25,10 @@ type Config struct {
 	// DisableProposals turns individual proposals off (applied after
 	// Standard and EnableProposals).
 	DisableProposals []Proposal
-	// WASI pre-registers the built-in WASI host module on a VM.
+	// WASI pre-registers the built-in WASI host module on a VM. Registration
+	// alone grants no stdio, arguments, environment, or preopens. Call
+	// VM.WASIModule and Module.InitWASI with an explicit WASIStdio policy
+	// before exposing those capabilities.
 	WASI bool
 	// RunMode selects the execution engine. The zero value is the
 	// interpreter, which is also the engine default.
@@ -40,7 +45,7 @@ type Config struct {
 }
 
 // CompilerConfig holds AOT/JIT compiler options. Zero values keep engine
-// defaults (O3, native output, everything off).
+// defaults (O3, universal Wasm output, everything off).
 type CompilerConfig struct {
 	OptimizationLevel OptimizationLevel
 	OutputFormat      CompilerOutputFormat
@@ -56,11 +61,28 @@ type StatsConfig struct {
 	TimeMeasuring       bool
 }
 
+// EffectiveConfig is the configuration that WasmEdge will actually use after
+// applying engine defaults and Config overrides. Unlike Config, every enum
+// field is explicit and Proposals contains the complete enabled set.
+//
+// Obtain a snapshot with Config.Effective. The returned value is ordinary Go
+// data and owns no native resource.
+type EffectiveConfig struct {
+	Proposals      []Proposal
+	WASI           bool
+	RunMode        RunMode
+	MaxMemoryPages uint64
+	AllowAFUNIX    bool
+	Compiler       CompilerConfig
+	Stats          StatsConfig
+}
+
 // Standard is a WASM standard version. The zero value keeps the engine
 // default (the Go constants are offset by one from the C enum so that a
 // zero Config field is distinguishable from an explicit WASM 1.0).
 type Standard int32
 
+// Standard values select the core WebAssembly language revision.
 const (
 	StandardUnset Standard = 0
 	StandardWASM1 Standard = C.WasmEdge_Standard_WASM_1 + 1
@@ -71,6 +93,7 @@ const (
 // Proposal is one WASM feature proposal.
 type Proposal uint32
 
+// Proposal values identify WasmEdge feature toggles.
 const (
 	ProposalImportExportMutGlobals       Proposal = C.WasmEdge_Proposal_ImportExportMutGlobals
 	ProposalNonTrapFloatToIntConversions Proposal = C.WasmEdge_Proposal_NonTrapFloatToIntConversions
@@ -92,15 +115,24 @@ const (
 	ProposalComponent                    Proposal = C.WasmEdge_Proposal_Component
 )
 
+// HostRegistration identifies a built-in host module that WasmEdge can
+// register into a VM.
+type HostRegistration uint32
+
+// HostRegistration values identify built-in host modules.
+const (
+	HostRegistrationWASI HostRegistration = C.WasmEdge_HostRegistration_Wasi
+)
+
 // RunMode selects the execution engine. The zero value (interpreter) is the
 // engine default.
 type RunMode uint32
 
+// RunMode values select the interpreter, JIT, or AOT execution path.
 const (
 	RunModeInterpreter RunMode = C.WasmEdge_RunMode_Interpreter
 	RunModeJIT         RunMode = C.WasmEdge_RunMode_JIT
 	RunModeAOT         RunMode = C.WasmEdge_RunMode_AOT
-	RunModeLazyJIT     RunMode = C.WasmEdge_RunMode_LazyJIT
 )
 
 // OptimizationLevel is an AOT/JIT optimization level. The zero value keeps
@@ -108,6 +140,7 @@ const (
 // enum for that reason.
 type OptimizationLevel int32
 
+// OptimizationLevel values select the compiler optimization policy.
 const (
 	OptimizationUnset OptimizationLevel = 0
 	OptimizationO0    OptimizationLevel = C.WasmEdge_CompilerOptimizationLevel_O0 + 1
@@ -119,28 +152,27 @@ const (
 )
 
 // CompilerOutputFormat selects the AOT artifact format. The zero value
-// keeps the engine default (native shared library); explicit formats are
+// keeps the engine default (universal Wasm); explicit formats are
 // offset by one from the C enum.
 type CompilerOutputFormat int32
 
+// CompilerOutputFormat values select native or universal Wasm artifacts.
 const (
 	OutputFormatUnset  CompilerOutputFormat = 0
 	OutputFormatNative CompilerOutputFormat = C.WasmEdge_CompilerOutputFormat_Native + 1
 	OutputFormatWasm   CompilerOutputFormat = C.WasmEdge_CompilerOutputFormat_Wasm + 1
 )
 
-// TODO(intern-easy): A13 — add String() methods for Proposal, Standard,
-// RunMode, OptimizationLevel and CompilerOutputFormat in a new
-// config_string.go, using the upstream names from enum.inc. Pattern:
-// ValKind.String in valtype.go. Extend config_test.go with a table test.
-
-// build materializes the C configure context; callers free it via the
-// returned function immediately after the consuming constructor returns.
-// A nil *Config yields a nil context, which every C constructor accepts as
-// "defaults".
-func (c *Config) build() (*C.WasmEdge_ConfigureContext, func()) {
+// build validates the declarative configuration and materializes its C
+// counterpart. Callers free the context via the returned function immediately
+// after the consuming constructor returns. A nil *Config yields a nil context,
+// which every C constructor accepts as "defaults".
+func (c *Config) build() (*C.WasmEdge_ConfigureContext, func(), error) {
 	if c == nil {
-		return nil, func() {}
+		return nil, func() {}, nil
+	}
+	if err := c.validate(); err != nil {
+		return nil, func() {}, err
 	}
 	cxt := C.WasmEdge_ConfigureCreate()
 	free := func() {
@@ -149,7 +181,7 @@ func (c *Config) build() (*C.WasmEdge_ConfigureContext, func()) {
 		}
 	}
 	if cxt == nil {
-		return nil, free
+		return nil, free, fmt.Errorf("create native configuration: %w", ErrUnavailable)
 	}
 	if c.Standard != StandardUnset {
 		C.WasmEdge_ConfigureSetWASMStandard(cxt, C.enum_WasmEdge_Standard(c.Standard-1))
@@ -198,5 +230,128 @@ func (c *Config) build() (*C.WasmEdge_ConfigureContext, func()) {
 	if c.Stats.TimeMeasuring {
 		C.WasmEdge_ConfigureStatisticsSetTimeMeasuring(cxt, true)
 	}
-	return cxt, free
+	return cxt, free, nil
+}
+
+// Effective resolves engine defaults and Config overrides into a readable
+// snapshot. A nil receiver is valid and reports the WasmEdge defaults.
+func (c *Config) Effective() (EffectiveConfig, error) {
+	source := c
+	if source == nil {
+		source = &Config{}
+	}
+	cxt, free, err := source.build()
+	if err != nil {
+		return EffectiveConfig{}, err
+	}
+	defer free()
+
+	out := EffectiveConfig{
+		WASI: bool(C.WasmEdge_ConfigureHasHostRegistration(
+			cxt, C.WasmEdge_HostRegistration_Wasi)),
+		RunMode:        RunMode(C.WasmEdge_ConfigureGetRunMode(cxt)),
+		MaxMemoryPages: uint64(C.WasmEdge_ConfigureGetMaxMemoryPage(cxt)),
+		AllowAFUNIX:    bool(C.WasmEdge_ConfigureIsAllowAFUNIX(cxt)),
+		Compiler: CompilerConfig{
+			OptimizationLevel: OptimizationLevel(
+				C.WasmEdge_ConfigureCompilerGetOptimizationLevel(cxt),
+			) + 1,
+			OutputFormat: CompilerOutputFormat(
+				C.WasmEdge_ConfigureCompilerGetOutputFormat(cxt),
+			) + 1,
+			DumpIR: bool(C.WasmEdge_ConfigureCompilerIsDumpIR(cxt)),
+			GenericBinary: bool(
+				C.WasmEdge_ConfigureCompilerIsGenericBinary(cxt),
+			),
+			Interruptible: bool(
+				C.WasmEdge_ConfigureCompilerIsInterruptible(cxt),
+			),
+		},
+		Stats: StatsConfig{
+			InstructionCounting: bool(
+				C.WasmEdge_ConfigureStatisticsIsInstructionCounting(cxt),
+			),
+			CostMeasuring: bool(
+				C.WasmEdge_ConfigureStatisticsIsCostMeasuring(cxt),
+			),
+			TimeMeasuring: bool(
+				C.WasmEdge_ConfigureStatisticsIsTimeMeasuring(cxt),
+			),
+		},
+	}
+	for _, proposal := range allProposals {
+		if bool(C.WasmEdge_ConfigureHasProposal(
+			cxt, C.enum_WasmEdge_Proposal(proposal),
+		)) {
+			out.Proposals = append(out.Proposals, proposal)
+		}
+	}
+	return out, nil
+}
+
+var allProposals = [...]Proposal{
+	ProposalImportExportMutGlobals,
+	ProposalNonTrapFloatToIntConversions,
+	ProposalSignExtensionOperators,
+	ProposalMultiValue,
+	ProposalBulkMemoryOperations,
+	ProposalReferenceTypes,
+	ProposalSIMD,
+	ProposalTailCall,
+	ProposalExtendedConst,
+	ProposalFunctionReferences,
+	ProposalGC,
+	ProposalMultiMemories,
+	ProposalRelaxSIMD,
+	ProposalAnnotations,
+	ProposalExceptionHandling,
+	ProposalMemory64,
+	ProposalThreads,
+	ProposalComponent,
+}
+
+func (c *Config) validate() error {
+	switch c.Standard {
+	case StandardUnset, StandardWASM1, StandardWASM2, StandardWASM3:
+	default:
+		return fmt.Errorf("standard %s: %w", c.Standard, ErrInvalidArgument)
+	}
+	for i, p := range c.EnableProposals {
+		if !p.valid() {
+			return fmt.Errorf("enable proposal %d (%s): %w", i, p, ErrInvalidArgument)
+		}
+	}
+	for i, p := range c.DisableProposals {
+		if !p.valid() {
+			return fmt.Errorf("disable proposal %d (%s): %w", i, p, ErrInvalidArgument)
+		}
+	}
+	switch c.RunMode {
+	case RunModeInterpreter, RunModeJIT, RunModeAOT:
+	default:
+		return fmt.Errorf("run mode %s: %w", c.RunMode, ErrInvalidArgument)
+	}
+	switch c.Compiler.OptimizationLevel {
+	case OptimizationUnset, OptimizationO0, OptimizationO1, OptimizationO2,
+		OptimizationO3, OptimizationOs, OptimizationOz:
+	default:
+		return fmt.Errorf("optimization level %s: %w",
+			c.Compiler.OptimizationLevel, ErrInvalidArgument)
+	}
+	switch c.Compiler.OutputFormat {
+	case OutputFormatUnset, OutputFormatNative, OutputFormatWasm:
+	default:
+		return fmt.Errorf("compiler output format %s: %w",
+			c.Compiler.OutputFormat, ErrInvalidArgument)
+	}
+	return nil
+}
+
+func (p Proposal) valid() bool {
+	for _, known := range allProposals {
+		if p == known {
+			return true
+		}
+	}
+	return false
 }

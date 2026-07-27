@@ -3,11 +3,12 @@ package wasmedge
 // #include <wasmedge/wasmedge.h>
 import "C"
 
-import "runtime"
+import "fmt"
 
 // Mutability of a global.
 type Mutability uint32
 
+// Mutability values describe whether a global can be updated.
 const (
 	MutabilityConst Mutability = C.WasmEdge_Mutability_Const
 	MutabilityVar   Mutability = C.WasmEdge_Mutability_Var
@@ -27,6 +28,7 @@ func (m Mutability) String() string {
 // ExternalType classifies an import or export entry.
 type ExternalType uint32
 
+// ExternalType values identify the kind of an import or export.
 const (
 	ExternalTypeFunction ExternalType = C.WasmEdge_ExternalType_Function
 	ExternalTypeTable    ExternalType = C.WasmEdge_ExternalType_Table
@@ -52,208 +54,272 @@ func (t ExternalType) String() string {
 	}
 }
 
-// FunctionType describes parameter and result types of a function.
+// FunctionType describes the parameter and result types of a function.
+// It is a plain Go value. Params and Results are copied when the descriptor
+// crosses the native API boundary.
 type FunctionType struct {
-	ptr  *C.WasmEdge_FunctionTypeContext
-	life lifetime
+	Params  []ValType
+	Results []ValType
 }
 
-// NewFunctionType creates a function type. Both slices may be empty. The
-// result is owned: Close it unless it is consumed by a documented
-// ownership-transferring call (engine consumers copy function types, so in
-// practice: always Close).
-func NewFunctionType(params, results []ValType) *FunctionType {
-	cp, cr := packValTypes(params), packValTypes(results)
+func functionTypeFromC(ptr *C.WasmEdge_FunctionTypeContext) (FunctionType, bool) {
+	if ptr == nil {
+		return FunctionType{}, false
+	}
+	var out FunctionType
+	if n := C.WasmEdge_FunctionTypeGetParametersLength(ptr); n != 0 {
+		buf := make([]C.WasmEdge_ValType, n)
+		got := C.WasmEdge_FunctionTypeGetParameters(ptr, &buf[0], n)
+		out.Params = unpackValTypes(buf[:min(got, n)])
+	}
+	if n := C.WasmEdge_FunctionTypeGetReturnsLength(ptr); n != 0 {
+		buf := make([]C.WasmEdge_ValType, n)
+		got := C.WasmEdge_FunctionTypeGetReturns(ptr, &buf[0], n)
+		out.Results = unpackValTypes(buf[:min(got, n)])
+	}
+	return out, true
+}
+
+func (t FunctionType) build() (*C.WasmEdge_FunctionTypeContext, func(), error) {
+	if err := validateValTypes("parameter", t.Params); err != nil {
+		return nil, nil, err
+	}
+	if err := validateValTypes("result", t.Results); err != nil {
+		return nil, nil, err
+	}
+	paramCount, err := checkedUint32Count(
+		"function parameter type", uint64(len(t.Params)),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	resultCount, err := checkedUint32Count(
+		"function result type", uint64(len(t.Results)),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	params, results := packValTypes(t.Params), packValTypes(t.Results)
 	ptr := C.WasmEdge_FunctionTypeCreate(
-		valTypesPtr(cp), C.uint32_t(len(cp)), valTypesPtr(cr), C.uint32_t(len(cr)))
+		valTypesPtr(params), C.uint32_t(paramCount),
+		valTypesPtr(results), C.uint32_t(resultCount),
+	)
 	if ptr == nil {
-		return nil
+		return nil, nil, fmt.Errorf("create native function type: %w", ErrUnavailable)
 	}
-	t := &FunctionType{ptr: ptr}
-	arm(t, &t.life, "FunctionType", func() { C.WasmEdge_FunctionTypeDelete(ptr) })
-	return t
-}
-
-func borrowedFunctionType(ptr *C.WasmEdge_FunctionTypeContext, owner any) *FunctionType {
-	if ptr == nil {
-		return nil
-	}
-	return &FunctionType{ptr: ptr, life: borrowed(owner)}
-}
-
-// Parameters returns the parameter types.
-func (t *FunctionType) Parameters() []ValType {
-	defer runtime.KeepAlive(t)
-	n := C.WasmEdge_FunctionTypeGetParametersLength(t.ptr)
-	if n == 0 {
-		return nil
-	}
-	buf := make([]C.WasmEdge_ValType, n)
-	got := C.WasmEdge_FunctionTypeGetParameters(t.ptr, &buf[0], n)
-	return unpackValTypes(buf[:min(got, n)])
-}
-
-// Results returns the result types.
-func (t *FunctionType) Results() []ValType {
-	defer runtime.KeepAlive(t)
-	n := C.WasmEdge_FunctionTypeGetReturnsLength(t.ptr)
-	if n == 0 {
-		return nil
-	}
-	buf := make([]C.WasmEdge_ValType, n)
-	got := C.WasmEdge_FunctionTypeGetReturns(t.ptr, &buf[0], n)
-	return unpackValTypes(buf[:min(got, n)])
-}
-
-// Close frees the type. No-op on borrowed views and after the first call.
-func (t *FunctionType) Close() error {
-	ptr := t.ptr
-	return t.life.close(func() { C.WasmEdge_FunctionTypeDelete(ptr) })
+	return ptr, func() { C.WasmEdge_FunctionTypeDelete(ptr) }, nil
 }
 
 // TableType describes a table's element type and size limits.
 type TableType struct {
-	ptr  *C.WasmEdge_TableTypeContext
-	life lifetime
+	Element ValType
+	Limits  Limits
 }
 
-// NewTableType creates a table type. refType must be a reference type
-// (funcref or externref); the C API returns nil otherwise, and so does this.
-func NewTableType(refType ValType, limits Limits) *TableType {
-	clim, free := limits.build()
-	defer free()
-	ptr := C.WasmEdge_TableTypeCreate(refType.raw, clim)
+func tableTypeFromC(ptr *C.WasmEdge_TableTypeContext) (TableType, bool) {
 	if ptr == nil {
-		return nil
+		return TableType{}, false
 	}
-	t := &TableType{ptr: ptr}
-	arm(t, &t.life, "TableType", func() { C.WasmEdge_TableTypeDelete(ptr) })
-	return t
+	return TableType{
+		Element: ValType{raw: C.WasmEdge_TableTypeGetRefType(ptr)},
+		Limits:  limitsFromC(C.WasmEdge_TableTypeGetLimit(ptr)),
+	}, true
 }
 
-func borrowedTableType(ptr *C.WasmEdge_TableTypeContext, owner any) *TableType {
+func (t TableType) validate() error {
+	if !t.Element.IsRef() {
+		return fmt.Errorf("table element must be a reference type: %w", ErrInvalidArgument)
+	}
+	if t.Limits.Shared {
+		return fmt.Errorf("table limits cannot be shared: %w", ErrInvalidArgument)
+	}
+	if err := validateTableLimits(t.Limits); err != nil {
+		return fmt.Errorf("table limits: %w", err)
+	}
+	return nil
+}
+
+func (t TableType) build() (*C.WasmEdge_TableTypeContext, func(), error) {
+	if err := t.validate(); err != nil {
+		return nil, nil, err
+	}
+	limits, freeLimits := t.Limits.build()
+	if limits == nil {
+		return nil, nil, fmt.Errorf("create native table limits: %w", ErrUnavailable)
+	}
+	ptr := C.WasmEdge_TableTypeCreate(t.Element.raw, limits)
+	freeLimits()
 	if ptr == nil {
-		return nil
+		return nil, nil, fmt.Errorf("create native table type: %w", ErrUnavailable)
 	}
-	return &TableType{ptr: ptr, life: borrowed(owner)}
-}
-
-// RefType returns the table's element type.
-func (t *TableType) RefType() ValType {
-	defer runtime.KeepAlive(t)
-	return ValType{raw: C.WasmEdge_TableTypeGetRefType(t.ptr)}
-}
-
-// Limits returns the table's size limits.
-func (t *TableType) Limits() Limits {
-	defer runtime.KeepAlive(t)
-	return limitsFromC(C.WasmEdge_TableTypeGetLimit(t.ptr))
-}
-
-// Close frees the type. No-op on borrowed views and after the first call.
-func (t *TableType) Close() error {
-	ptr := t.ptr
-	return t.life.close(func() { C.WasmEdge_TableTypeDelete(ptr) })
+	return ptr, func() { C.WasmEdge_TableTypeDelete(ptr) }, nil
 }
 
 // MemoryType describes a linear memory's page limits.
 type MemoryType struct {
-	ptr  *C.WasmEdge_MemoryTypeContext
-	life lifetime
+	Limits Limits
 }
 
-// NewMemoryType creates a memory type.
-func NewMemoryType(limits Limits) *MemoryType {
-	clim, free := limits.build()
-	defer free()
-	ptr := C.WasmEdge_MemoryTypeCreate(clim)
+func memoryTypeFromC(ptr *C.WasmEdge_MemoryTypeContext) (MemoryType, bool) {
 	if ptr == nil {
-		return nil
+		return MemoryType{}, false
 	}
-	t := &MemoryType{ptr: ptr}
-	arm(t, &t.life, "MemoryType", func() { C.WasmEdge_MemoryTypeDelete(ptr) })
-	return t
+	return MemoryType{Limits: limitsFromC(C.WasmEdge_MemoryTypeGetLimit(ptr))}, true
 }
 
-func borrowedMemoryType(ptr *C.WasmEdge_MemoryTypeContext, owner any) *MemoryType {
+func (t MemoryType) validate() error {
+	if err := validateMemoryLimits(t.Limits); err != nil {
+		return fmt.Errorf("memory limits: %w", err)
+	}
+	return nil
+}
+
+func (t MemoryType) build() (*C.WasmEdge_MemoryTypeContext, func(), error) {
+	if err := t.validate(); err != nil {
+		return nil, nil, err
+	}
+	limits, freeLimits := t.Limits.build()
+	if limits == nil {
+		return nil, nil, fmt.Errorf("create native memory limits: %w", ErrUnavailable)
+	}
+	ptr := C.WasmEdge_MemoryTypeCreate(limits)
+	freeLimits()
 	if ptr == nil {
-		return nil
+		return nil, nil, fmt.Errorf("create native memory type: %w", ErrUnavailable)
 	}
-	return &MemoryType{ptr: ptr, life: borrowed(owner)}
-}
-
-// Limits returns the memory's page limits.
-func (t *MemoryType) Limits() Limits {
-	defer runtime.KeepAlive(t)
-	return limitsFromC(C.WasmEdge_MemoryTypeGetLimit(t.ptr))
-}
-
-// Close frees the type. No-op on borrowed views and after the first call.
-func (t *MemoryType) Close() error {
-	ptr := t.ptr
-	return t.life.close(func() { C.WasmEdge_MemoryTypeDelete(ptr) })
+	return ptr, func() { C.WasmEdge_MemoryTypeDelete(ptr) }, nil
 }
 
 // GlobalType describes a global's value type and mutability.
 type GlobalType struct {
-	ptr  *C.WasmEdge_GlobalTypeContext
-	life lifetime
+	Value      ValType
+	Mutability Mutability
 }
 
-// NewGlobalType creates a global type.
-func NewGlobalType(valType ValType, mut Mutability) *GlobalType {
-	ptr := C.WasmEdge_GlobalTypeCreate(valType.raw, C.enum_WasmEdge_Mutability(mut))
+func globalTypeFromC(ptr *C.WasmEdge_GlobalTypeContext) (GlobalType, bool) {
 	if ptr == nil {
-		return nil
+		return GlobalType{}, false
 	}
-	t := &GlobalType{ptr: ptr}
-	arm(t, &t.life, "GlobalType", func() { C.WasmEdge_GlobalTypeDelete(ptr) })
-	return t
+	return GlobalType{
+		Value:      ValType{raw: C.WasmEdge_GlobalTypeGetValType(ptr)},
+		Mutability: Mutability(C.WasmEdge_GlobalTypeGetMutability(ptr)),
+	}, true
 }
 
-func borrowedGlobalType(ptr *C.WasmEdge_GlobalTypeContext, owner any) *GlobalType {
+func (t GlobalType) build() (*C.WasmEdge_GlobalTypeContext, func(), error) {
+	if t.Value.Kind() == ValKindUnknown {
+		return nil, nil, fmt.Errorf("global value type is invalid: %w", ErrInvalidArgument)
+	}
+	if t.Mutability != MutabilityConst && t.Mutability != MutabilityVar {
+		return nil, nil, fmt.Errorf("global mutability %d is invalid: %w",
+			uint32(t.Mutability), ErrInvalidArgument)
+	}
+	ptr := C.WasmEdge_GlobalTypeCreate(t.Value.raw, C.enum_WasmEdge_Mutability(t.Mutability))
 	if ptr == nil {
-		return nil
+		return nil, nil, fmt.Errorf("create native global type: %w", ErrUnavailable)
 	}
-	return &GlobalType{ptr: ptr, life: borrowed(owner)}
+	return ptr, func() { C.WasmEdge_GlobalTypeDelete(ptr) }, nil
 }
 
-// ValType returns the global's value type.
-func (t *GlobalType) ValType() ValType {
-	defer runtime.KeepAlive(t)
-	return ValType{raw: C.WasmEdge_GlobalTypeGetValType(t.ptr)}
-}
-
-// Mutability returns whether the global is const or var.
-func (t *GlobalType) Mutability() Mutability {
-	defer runtime.KeepAlive(t)
-	return Mutability(C.WasmEdge_GlobalTypeGetMutability(t.ptr))
-}
-
-// Close frees the type. No-op on borrowed views and after the first call.
-func (t *GlobalType) Close() error {
-	ptr := t.ptr
-	return t.life.close(func() { C.WasmEdge_GlobalTypeDelete(ptr) })
-}
-
-// TagType describes an exception-handling tag. Tags cannot be created via
-// the C API; TagType values are always borrowed from modules or instances.
+// TagType describes an exception-handling tag. WasmEdge 0.17.1 exposes
+// only the tag's function signature.
 type TagType struct {
-	ptr   *C.WasmEdge_TagTypeContext
-	owner any // pins whatever owns the underlying tag type
+	Signature FunctionType
 }
 
-func borrowedTagType(ptr *C.WasmEdge_TagTypeContext, owner any) *TagType {
+func tagTypeFromC(ptr *C.WasmEdge_TagTypeContext) (TagType, bool) {
 	if ptr == nil {
+		return TagType{}, false
+	}
+	signature, ok := functionTypeFromC(C.WasmEdge_TagTypeGetFunctionType(ptr))
+	if !ok {
+		return TagType{}, false
+	}
+	return TagType{Signature: signature}, true
+}
+
+func validateValTypes(role string, types []ValType) error {
+	for i, typ := range types {
+		if typ.Kind() == ValKindUnknown {
+			return fmt.Errorf("%s %d has an invalid value type: %w",
+				role, i, ErrInvalidArgument)
+		}
+	}
+	return nil
+}
+
+func validateLimits(limits Limits) error {
+	if limits.HasMax && limits.Max < limits.Min {
+		return fmt.Errorf("maximum %d is smaller than minimum %d: %w",
+			limits.Max, limits.Min, ErrInvalidArgument)
+	}
+	if limits.Shared && !limits.HasMax {
+		return fmt.Errorf("shared memory requires a maximum: %w", ErrInvalidArgument)
+	}
+	return nil
+}
+
+const (
+	maxMemory32Pages   = uint64(1 << 16)
+	maxMemory64Pages   = uint64(1 << 48)
+	maxTable32Elements = uint64(1<<32 - 1)
+)
+
+func maxInt() int { return int(^uint(0) >> 1) }
+
+func validateStandaloneTableSize(size uint64) error {
+	if size > uint64(maxInt()) {
+		return fmt.Errorf(
+			"table size %d exceeds the host index limit %d: %w",
+			size, maxInt(), ErrUnavailable,
+		)
+	}
+	return nil
+}
+
+func validateMemoryLimits(limits Limits) error {
+	if err := validateLimits(limits); err != nil {
+		return err
+	}
+	maximum := maxMemory32Pages
+	if limits.Is64 {
+		maximum = maxMemory64Pages
+	}
+	if limits.Min > maximum {
+		return fmt.Errorf(
+			"minimum %d exceeds the %d-page memory limit: %w",
+			limits.Min, maximum, ErrInvalidArgument,
+		)
+	}
+	if limits.HasMax && limits.Max > maximum {
+		return fmt.Errorf(
+			"maximum %d exceeds the %d-page memory limit: %w",
+			limits.Max, maximum, ErrInvalidArgument,
+		)
+	}
+	return nil
+}
+
+func validateTableLimits(limits Limits) error {
+	if err := validateLimits(limits); err != nil {
+		return err
+	}
+	if limits.Is64 {
 		return nil
 	}
-	return &TagType{ptr: ptr, owner: owner}
-}
-
-// FunctionType returns the tag's associated function type (borrowed).
-func (t *TagType) FunctionType() *FunctionType {
-	defer runtime.KeepAlive(t)
-	return borrowedFunctionType(C.WasmEdge_TagTypeGetFunctionType(t.ptr), t)
+	if limits.Min > maxTable32Elements {
+		return fmt.Errorf(
+			"minimum %d exceeds the 32-bit table limit: %w",
+			limits.Min, ErrInvalidArgument,
+		)
+	}
+	if limits.HasMax && limits.Max > maxTable32Elements {
+		return fmt.Errorf(
+			"maximum %d exceeds the 32-bit table limit: %w",
+			limits.Max, ErrInvalidArgument,
+		)
+	}
+	return nil
 }
 
 func packValTypes(ts []ValType) []C.WasmEdge_ValType {
